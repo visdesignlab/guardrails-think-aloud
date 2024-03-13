@@ -62,7 +62,7 @@ export function Bar({
       }
 
       return (
-        <g key={i}>
+        <g style={{ cursor: 'pointer' }} key={i}>
           <rect onClick={(e) => setSelection(data.filter((d) => d[parameters.category] === car[parameters.category]).map((d) => d[parameters.ids]), e)} key={i} x={margin.left} y={yScale(car[parameters.category])} fill={colorScale(car[parameters.category])} height={yScale.bandwidth()} width={xScale(car.count) - margin.left} />
           <text x={xScale(car.count) + 5} y={yScale(car[parameters.category])! + (yScale.bandwidth() / 2)} style={{ textAlign: 'center', dominantBaseline: 'middle', fontSize: 14 }}>{car.count}</text>
         </g>
@@ -82,7 +82,7 @@ export function Bar({
       }
 
       return (
-        <g key={i}>
+        <g style={{ cursor: 'pointer' }} key={i}>
           <rect opacity={0.7} onClick={(e) => setSelection(data.filter((d) => d[parameters.category] === car[parameters.category]).map((d) => d[parameters.ids]), e)} key={i} x={margin.left} y={yScale(car[parameters.category])} fill="lightgray" height={yScale.bandwidth()} width={xScale(car.count) - margin.left} />
         </g>
       );

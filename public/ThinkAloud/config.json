@@ -839,16 +839,6 @@
                     "leftLabel": "Not comfortable"
                 },
                 {
-                    "id": "q2",
-                    "prompt": "How awkward was answering questions out loud?",
-                    "required": true,
-                    "location": "aboveStimulus",
-                    "type": "likert",
-                    "preset": 7,
-                    "rightLabel": "Not awkward",
-                    "leftLabel": "Very awkward"
-                },
-                {
                     "id": "privacyQ",
                     "prompt": "Do you have any privacy concerns about having your audio recorded?",
                     "required": true,

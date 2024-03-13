@@ -118,7 +118,7 @@ export function Violin({
     return (
       <g>
         {xScale.domain().map((xVal: string) => (
-          <g key={xVal}>
+          <g style={{ cursor: 'pointer' }} key={xVal}>
 
             {params.hideCat ? (
               <g>

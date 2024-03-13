@@ -2,7 +2,7 @@
 
  **Investigator: Zach Cutler**
 
- **Contact Information: zach.t.cutler@gmail.com; 208-890-0869**
+ **Contact Information: zach.t.cutler@gmail.com; 801-585-0327**
 
 ## Title of Research Study: Interactive brush selections in scatterplots.
 ## Introduction
