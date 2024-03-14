@@ -116,7 +116,7 @@ export function Histogram({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (allDataTable.objects() as any[]).map((bar: any, i) => (
       <g style={{ cursor: 'pointer' }} key={`${i}survRects`}>
-        <rect onClick={(e) => setSelection(dataTable.objects().filter((d: any) => (d[brushState.xCol] === bar[brushState.xCol] && params.hideCat ? true : d.Survived === bar.Survived)).map((d: any) => d.Name), e)} opacity={0.7} x={bar.Survived === 'Yes' || params.hideCat ? xScale(bar[brushState.xCol]) : xScale(bar[brushState.xCol])! + (xScale.bandwidth() / 2)} fill="lightgray" width={params.hideCat ? xScale.bandwidth() : xScale.bandwidth() / 2} y={height - (height - yScale(bar.count))} height={margin.top + height - yScale(bar.count)} />
+        <rect onClick={(e) => setSelection(dataTable.objects().filter((d: any) => (d[brushState.xCol] === bar[brushState.xCol] && (params.hideCat ? true : d.Survived === bar.Survived))).map((d: any) => d.Name), e)} opacity={0.7} x={bar.Survived === 'Yes' || params.hideCat ? xScale(bar[brushState.xCol]) : xScale(bar[brushState.xCol])! + (xScale.bandwidth() / 2)} fill="lightgray" width={params.hideCat ? xScale.bandwidth() : xScale.bandwidth() / 2} y={height - (height - yScale(bar.count))} height={margin.top + height - yScale(bar.count)} />
         {/* <text x={xScale(bar[brushState.xCol]) + xScale.bandwidth() / 2} y={yScale(bar.count)!} style={{ textAlign: 'center', dominantBaseline: 'middle', fontSize: 14 }}>{bar.count}</text> */}
       </g>
     ));
