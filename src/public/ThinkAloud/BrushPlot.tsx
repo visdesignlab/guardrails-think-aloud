@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import {
-  Box, Button, Center, ColorSwatch, Group, Loader, SegmentedControl, Stack, Text,
+  Button, ColorSwatch, Group, Loader, SegmentedControl, Stack, Text,
 } from '@mantine/core';
 import {
   useCallback, useEffect, useMemo, useState,
@@ -16,7 +16,6 @@ import { Scatter } from './Scatter';
 import { Bar } from './Bar';
 import { StimulusParams } from '../../store/types';
 import { BrushParams, BrushState, SelectionType } from './types';
-import { AddPlot } from './AddPlot';
 import { Histogram } from './Histogram';
 import { Violin } from './Violin';
 
@@ -52,33 +51,29 @@ export function BrushPlot({ parameters, setAnswer }: StimulusParams<BrushParams>
   const { actions, trrack } = useMemo(() => {
     const reg = Registry.create();
 
-    const brush = reg.register('brush', (state, currBrush: BrushState) => {
+    const brush = reg.register('brush', (state, currBrush: { [n: number] : BrushState, selection: string[] }) => {
       state.all = { brush: currBrush };
       return state;
     });
 
-    const brushMove = reg.register('brushMove', (state, currBrush: BrushState) => {
+    const brushMove = reg.register('brushMove', (state, currBrush: { [n: number] : BrushState, selection: string[] }) => {
       state.all = { brush: currBrush };
       return state;
     });
 
-    const brushResize = reg.register('brushResize', (state, currBrush: BrushState) => {
+    const brushResize = reg.register('brushResize', (state, currBrush: { [n: number] : BrushState, selection: string[] }) => {
       state.all = { brush: currBrush };
       return state;
     });
 
-    const clearBrush = reg.register('brushClear', (state, currBrush: BrushState) => {
+    const clearBrush = reg.register('brushClear', (state, currBrush: { [n: number] : BrushState, selection: string[] }) => {
       state.all = { brush: currBrush };
       return state;
     });
 
     const trrackInst = initializeTrrack({
       registry: reg,
-      initialState: {
-        all: {
-          hasBrush: false, x1: null, x2: null, y1: null, y2: null, ids: [],
-        },
-      },
+      initialState: { all: brushState },
     });
 
     return {
@@ -92,10 +87,12 @@ export function BrushPlot({ parameters, setAnswer }: StimulusParams<BrushParams>
     };
   }, []);
 
-  const moveBrushCallback = useCallback((selType: SelectionType, state: BrushState) => {
+  const moveBrushCallback = useCallback((selType: SelectionType, state: { [n: number] : BrushState, selection: string[] }) => {
     if (selType === 'drag') {
       trrack.apply('Move Brush', actions.brushMove(state));
     } else if (selType === 'handle') {
+      trrack.apply('Brush', actions.brush(state));
+    } else if (selType === 'click') {
       trrack.apply('Brush', actions.brush(state));
     }
 
@@ -143,10 +140,10 @@ export function BrushPlot({ parameters, setAnswer }: StimulusParams<BrushParams>
 
     setBrushState({ ...brushState, [id]: newState, selection: newSelection });
 
-    if (selType === 'drag' || selType === 'handle') {
-      debouncedCallback(selType, newState);
+    if (selType === 'drag' || selType === 'handle' || selType === 'click') {
+      debouncedCallback(selType, { ...brushState, [id]: newState, selection: newSelection });
     } else if (selType === 'clear') {
-      trrack.apply('Clear Brush', actions.clearBrush(newState));
+      trrack.apply('Clear Brush', actions.clearBrush({ ...brushState, [id]: newState, selection: newSelection }));
     }
 
     setFilteredTable(_filteredTable);
@@ -171,9 +168,11 @@ export function BrushPlot({ parameters, setAnswer }: StimulusParams<BrushParams>
     const idSet = new Set(e.ctrlKey || e.metaKey ? [...brushState.selection, ...selection] : selection);
     const _filteredTable = fullTable!.filter(escape((d: any) => idSet.has(d[parameters.ids])));
 
-    setBrushState({ ...brushState, selection: e.ctrlKey || e.metaKey ? [...brushState.selection, ...selection] : selection });
+    setBrushState({ ...brushState, selection: [...idSet] });
     setFilteredTable(_filteredTable);
-  }, [brushState, fullTable, parameters.ids]);
+
+    moveBrushCallback('click', { ...brushState, selection: [...idSet] });
+  }, [brushState, fullTable, moveBrushCallback, parameters.ids]);
 
   const dataForScatter = useMemo(() => fullTable?.objects() || [], [fullTable]);
 

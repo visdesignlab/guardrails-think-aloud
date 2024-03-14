@@ -22,7 +22,7 @@ more about how people read and understand visualizations.
 ## Tasks
 The test contains 8 questions about 4 data
 visualizations. 
-It will take approximately 20-30 minutes to finish this
+It will take approximately 15-20 minutes to finish this
 test. 
 For each question, you will be given an interactive data
 visualization (right) and a problem to solve (left). 

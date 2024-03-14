@@ -2,27 +2,20 @@
 
 import { useResizeObserver } from '@mantine/hooks';
 import {
-  useEffect, useMemo, useState,
+  useMemo, useState,
 } from 'react';
 import ColumnTable from 'arquero/dist/types/table/column-table';
 import * as d3 from 'd3';
 import {
-  ActionIcon,
-  Button, Group, RangeSlider, SegmentedControl, Select, Slider, Stack, Text, Tooltip,
+  Stack,
 } from '@mantine/core';
-import { IconX } from '@tabler/icons-react';
 import {
-  bin, table, from, op,
+  bin, from, op, escape,
 } from 'arquero';
 import { XAxisBar } from './XAxisBar';
-import { YAxis } from './YAxis';
-import { Paintbrush } from './Paintbrush';
+
 import { BrushNames, BrushParams, BrushState } from './types';
-import { useEvent } from '../../store/hooks/useEvent';
 import { YAxisBar } from './YAxisBar';
-import {
-  kdeCalc, kernelDensityEstimator, kernelEpanechnikov, silvermans,
-} from './useKdeCalc';
 
 const margin = {
   top: 15,
@@ -91,7 +84,7 @@ export function Violin({
   const xScale = useMemo(() => d3.scaleBand([margin.left, width + margin.left]).domain([...new Set(allData.map((d) => d[brushState.xCol].toString()))].sort()).paddingInner(0.01), [width, allData, brushState.xCol]);
 
   const fullTable = useMemo(() => from(allData.map((d) => ({ ...d, Age: +d.Age }))), [allData]);
-  const partialTable = useMemo(() => from(data.map((d) => ({ ...d, Age: +d.Age }))), [data]);
+  const filteredIds = useMemo(() => new Set(data.map((d) => d[params.ids])), [data, params.ids]);
 
   const histogram = useMemo(() => {
     let binnedTable = params.hideCat ? fullTable
@@ -102,12 +95,7 @@ export function Violin({
     binnedTable = binnedTable.rollup({ ids: op.array_agg(params.ids), count: op.count() })
       .orderby('group');
 
-    let binnedPartialTable = params.hideCat ? partialTable
-      .groupby(brushState.xCol, { group: bin(brushState.yCol, { maxbins: 20 }), group_max: bin(brushState.yCol, { maxbins: 20, offset: 1 }) })
-      : partialTable
-        .groupby(brushState.xCol, 'Survived', { group: bin(brushState.yCol, { maxbins: 20 }), group_max: bin(brushState.yCol, { maxbins: 20, offset: 1 }) });
-
-    binnedPartialTable = binnedPartialTable.rollup({ ids: op.array_agg(params.ids), count: op.count() })
+    const binnedPartialTable = binnedTable.derive({ ids: escape((d: any) => d.ids.filter((id: any) => filteredIds.has(id))), count: escape((d: any) => d.ids.filter((id: any) => filteredIds.has(id)).length) })
       .orderby('group');
 
     const widthScale = d3.scaleLinear([0, xScale.bandwidth() / 2]).domain([0, d3.max<number>(binnedTable.array('count'))!]);
@@ -140,7 +128,7 @@ export function Violin({
         ))}
       </g>
     );
-  }, [brushState.xCol, brushState.yCol, fullTable, params.hideCat, params.ids, partialTable, setSelection, xScale, yScale]);
+  }, [brushState.xCol, brushState.yCol, filteredIds, fullTable, params.hideCat, params.ids, setSelection, xScale, yScale]);
 
   //   histogram.print();
 

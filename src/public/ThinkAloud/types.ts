@@ -10,7 +10,7 @@ export interface BrushState {
     type?: 'scatter' | 'beeswarm' | 'histogram' | 'violin'
   }
 
-export type SelectionType = 'drag' | 'handle' | 'clear' | null
+export type SelectionType = 'drag' | 'handle' | 'clear' | 'click' | null
 
 export type BrushNames = 'Rectangular Selection' | 'Axis Selection' | 'Slider Selection' | 'Paintbrush Selection'
 

@@ -1,4 +1,6 @@
-import { Button, Group, Text } from '@mantine/core';
+import {
+  Button, Center, Group, Text,
+} from '@mantine/core';
 
 import React, { useEffect, useState } from 'react';
 import {
@@ -89,7 +91,7 @@ export default function ResponseBlock({
         </React.Fragment>
       ))}
 
-      <Group position="right" spacing="xs" mt="xl">
+      <Group position="center" spacing="xs" mt="xl">
         {hasCorrectAnswer && showNextBtn && (
           <Button
             onClick={() => setCheckClicked(true)}
@@ -99,11 +101,13 @@ export default function ResponseBlock({
           </Button>
         )}
         {showNextBtn && (
-          <NextButton
-            disabled={hasCorrectAnswer && !checkClicked}
-            setCheckClicked={setCheckClicked}
-            label={configInUse.nextButtonText || 'Next'}
-          />
+          <Center>
+            <NextButton
+              disabled={hasCorrectAnswer && !checkClicked}
+              setCheckClicked={setCheckClicked}
+              label={configInUse.nextButtonText || 'Next'}
+            />
+          </Center>
         )}
       </Group>
     </div>

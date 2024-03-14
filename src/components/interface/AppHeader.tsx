@@ -30,6 +30,7 @@ import { useCurrentStep, useStudyId } from '../../routes';
 import { useStoreDispatch, useStoreSelector, useStoreActions } from '../../store/store';
 import { useStorageEngine } from '../../store/storageEngineHooks';
 import { PREFIX } from '../Prefix';
+import RecordingAudioWaveform from './RecordingAudioWaveform';
 
 export default function AppHeader() {
   const { config: studyConfig, sequence: order } = useStoreSelector((state) => state);
@@ -67,21 +68,6 @@ export default function AppHeader() {
       });
   }
 
-  const wavesurferRef = useRef<WaveSurferRef | null>(null);
-
-  const handleWSMount = useCallback(
-    (waveSurfer: WaveSurferRef | null) => {
-      wavesurferRef.current = waveSurfer;
-
-      if (wavesurferRef.current) {
-        const record = wavesurferRef.current.registerPlugin(RecordPlugin.create({ scrollingWaveform: true, renderRecordedAudio: false }));
-        record.startRecording();
-        wavesurferRef.current.setOptions({ height: 50, waveColor: '#FA5252' });
-      }
-    },
-    [],
-  );
-
   return (
     <Header height="70" p="md">
       <Grid mt={-7} align="center">
@@ -93,11 +79,7 @@ export default function AppHeader() {
             {isRecording ? (
               <Group spacing={20} noWrap>
                 <Text color="red">Recording audio</Text>
-                <Box style={{ width: '70px', height: '50px' }}>
-                  <WaveSurfer onMount={handleWSMount}>
-                    <WaveForm id="waveform" />
-                  </WaveSurfer>
-                </Box>
+                <RecordingAudioWaveform />
               </Group>
             ) : null}
           </Group>

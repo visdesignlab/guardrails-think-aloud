@@ -123,7 +123,7 @@
             "description": "Audio test",
             "type": "react-component",
             "path": "ThinkAloud/AudioTest.tsx",
-            "nextButtonLocation": "sidebar",
+            "nextButtonLocation": "belowStimulus",
             "nextButtonText": "Continue",
             "response": [{
                 "id": "audioResponse",

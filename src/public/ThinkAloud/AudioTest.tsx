@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { StimulusParams } from '../../store/types';
 import { BrushParams } from './types';
+import RecordingAudioWaveform from '../../components/interface/RecordingAudioWaveform';
 
 export function AudioTest({ parameters, setAnswer }: StimulusParams<BrushParams>) {
   useEffect(() => {
@@ -72,6 +73,7 @@ export function AudioTest({ parameters, setAnswer }: StimulusParams<BrushParams>
         <Text ta="center" weight={700}>
           If you are not comfortable or able to speak English during this study, please close it now.
         </Text>
+        <Center><RecordingAudioWaveform height={200} width={400} /></Center>
       </Stack>
     </Center>
   );
