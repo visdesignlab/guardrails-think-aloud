@@ -104,7 +104,7 @@ export function BrushPlot({ parameters, setAnswer }: StimulusParams<BrushParams>
   }, [actions, setAnswer, trrack]);
 
   // debouncing the trrack callback
-  const debouncedCallback = useMemo(() => debounce(moveBrushCallback, 100, { maxWait: 100 }), [moveBrushCallback]);
+  const debouncedCallback = useMemo(() => debounce(moveBrushCallback, 50, { maxWait: 50 }), [moveBrushCallback]);
 
   // brush callback, updating state, finding the selected points, and pushing to trrack
   const brushedSpaceCallback = useCallback((sel: [[number | null, number | null], [number | null, number | null]], xScale: any, yScale: any, selType: SelectionType, id: number, ids?: string[]) => {
