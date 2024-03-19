@@ -53,7 +53,7 @@ export abstract class StorageEngine {
 
   abstract getAudio(participantId?: string): Promise<string>;
 
-  abstract getTranscription(participantId?: string): Promise<string>;
+  abstract getTranscription(taskList: string[], participantId?: string): Promise<string[]>;
 
   abstract nextParticipant(config: StudyConfig): Promise<ParticipantData>;
 

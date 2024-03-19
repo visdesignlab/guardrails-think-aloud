@@ -17,6 +17,7 @@ import { AllTasksTimeline } from './AllTasksTimeline';
 import { SingleTaskTimeline } from './SingleTaskTimeline';
 import { AudioTag } from '../../../store/types';
 import { useTextHighlight } from '../../../store/hooks/useTextHighlight';
+import { useStudyConfig } from '../../../store/hooks/useStudyConfig';
 
 export interface TranscribedAudioSnippet {
   alternatives: {confidence: number, transcript: string}[]
@@ -38,6 +39,14 @@ function getParticipantData(trrackId: string | undefined, storageEngine: Storage
 function getAllParticipantsData(storageEngine: StorageEngine | undefined) {
   if (storageEngine) {
     return storageEngine.getAllParticipantsData();
+  }
+
+  return null;
+}
+
+function getSequenceArray(storageEngine: StorageEngine | undefined) {
+  if (storageEngine) {
+    return storageEngine.getSequence();
   }
 
   return null;
@@ -69,8 +78,11 @@ export function AnalysisPopout({ cssUpdate, popoutWindow } : {cssUpdate: () => v
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [currentNode, setCurrentNode] = useState<string | null>(null);
 
-  const [transcription, setTranscription] = useState<TranscribedAudio | null>(null);
+  const [transcription, setTranscription] = useState<TranscribedAudio[] | null>(null);
   const [currentShownTranscription, setCurrentShownTranscription] = useState<number | null>(null);
+
+  const { value: sequence, status: sequenceStatus } = useAsync(getSequenceArray, [storageEngine]);
+
   const { value: participant, status } = useAsync(getParticipantData, [trrackId, storageEngine]);
 
   const { value: allParts, status: allPartsStatus } = useAsync(getAllParticipantsData, [storageEngine]);
@@ -87,6 +99,7 @@ export function AnalysisPopout({ cssUpdate, popoutWindow } : {cssUpdate: () => v
   const waveSurferDiv = useRef(null);
 
   const [hasHighlight, setHasHighlight] = useState<boolean>(false);
+  const config = useStudyConfig();
 
   cssUpdate();
 
@@ -127,12 +140,12 @@ export function AnalysisPopout({ cssUpdate, popoutWindow } : {cssUpdate: () => v
   }, [wavesurfer]);
 
   useEffect(() => {
-    if (studyId && trialName && trrackId) {
-      storageEngine?.getTranscription(trrackId).then((data) => {
-        setTranscription(JSON.parse(data));
+    if (studyId && trrackId && sequence) {
+      storageEngine?.getTranscription(sequence.filter((seq) => config.tasksToNotRecordAudio === undefined || !config.tasksToNotRecordAudio.includes(seq)), trrackId).then((data) => {
+        setTranscription(data.map((d) => JSON.parse(d)));
       });
     }
-  }, [storageEngine, studyId, trialName, trrackId]);
+  }, [storageEngine, studyId, trrackId, sequence, config.tasksToNotRecordAudio]);
 
   //   console.log(transcription);
 
@@ -154,7 +167,7 @@ export function AnalysisPopout({ cssUpdate, popoutWindow } : {cssUpdate: () => v
         <Group style={{ width: '100%', height: '100px' }} align="center" position="center">
           <Center>
             <Text color="dimmed" size={20} style={{ width: '100%' }}>
-              {transcription && currentShownTranscription !== null ? transcription.results[currentShownTranscription].alternatives[0].transcript : ''}
+              {/* {transcription && currentShownTranscription !== null ? transcription.results[currentShownTranscription].alternatives[0].transcript : ''} */}
             </Text>
           </Center>
         </Group>
@@ -164,43 +177,9 @@ export function AnalysisPopout({ cssUpdate, popoutWindow } : {cssUpdate: () => v
           <Text>{new Date(playTime).toLocaleString()}</Text>
         </Group>
 
-        <Menu width={250} position="bottom" shadow="md" trigger="hover">
-          <Menu.Target>
-            <Tooltip withinPortal label="example">
-              <Highlight
-                highlight={textTags?.map((tag) => tag.text) || []}
-                highlightStyles={{
-                  backgroundImage:
-            'cornflowerblue',
-                  fontWeight: 700,
-                  backgroundColor: 'cornflowerblue',
-                  color: 'cornflowerblue',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              >
-                {transcription?.results.map((res) => res.alternatives[0].transcript).join(' ') || ''}
-              </Highlight>
-            </Tooltip>
-          </Menu.Target>
-
-          <Menu.Dropdown>
-            {audioTags && trrackId ? audioTags.map((tag) => (
-              <Menu.Item
-                key={tag.name}
-                onClick={() => {
-                  storageEngine?.saveTextTags(trrackId, [...(textTags || []), { tag, text: highlightedAudio?.toString() || '' }]).then(() => refetchTextTags(trrackId || '', storageEngine));
-                }}
-              >
-                <Group>
-                  <Text key={tag.name}>
-                    {tag.name}
-                  </Text>
-                </Group>
-              </Menu.Item>
-            )) : null}
-          </Menu.Dropdown>
-        </Menu>
+        <Text>
+          {transcription?.map((d) => (d.results ? d.results.map((res) => res.alternatives[0].transcript).join(' ') : '' || '')).join(' ')}
+        </Text>
       </Stack>
       {/* <Divider orientation="vertical" ml={25} />
         <Stack style={{ width: '300px', height: '100%' }}>

@@ -139,7 +139,6 @@ export function Analysis({ setProvState } : {setProvState: (state: any) => void}
 
   return (
     <div>
-
       {/* {children} */}
       {createPortal(<div><AnalysisPopout popoutWindow={popoutRef.current || document as any} cssUpdate={updateCss} /></div>, containerEl)}
     </div>

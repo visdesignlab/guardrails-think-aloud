@@ -283,13 +283,14 @@ export class FirebaseStorageEngine extends StorageEngine {
   }
 
   async getTranscription(
-    participantId: string,
+    taskList: string[],
+    participantId?: string,
   ) {
     const storage = getStorage();
 
-    const url = await getDownloadURL(ref(storage, `${this.studyId}/audio/${participantId}.wav_transcription.txt`));
+    const urlList = await Promise.all(taskList.map(async (task) => await getDownloadURL(ref(storage, `${this.studyId}/audio/${participantId}_${task}.wav_transcription.txt`))));
 
-    return new Promise<string>((resolve) => {
+    const allTranscriptList = Promise.all(urlList.map((url) => new Promise<string>((resolve) => {
       const xhr = new XMLHttpRequest();
       xhr.responseType = 'blob';
       xhr.onload = () => {
@@ -303,7 +304,9 @@ export class FirebaseStorageEngine extends StorageEngine {
       };
       xhr.open('GET', url);
       xhr.send();
-    });
+    })));
+
+    return allTranscriptList;
   }
 
   async setSequenceArray(latinSquare: string[][]) {
