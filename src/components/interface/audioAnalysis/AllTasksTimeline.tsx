@@ -1,34 +1,25 @@
 import { useMemo } from 'react';
 import * as d3 from 'd3';
 import { Tooltip } from '@mantine/core';
+import { useParams } from 'react-router';
 import { ParticipantData } from '../../../storage/types';
 import { SingleTask } from './SingleTask';
 import { SingleTaskLabelLines } from './SingleTaskLabelLines';
-
-const margin = {
-  left: 5, top: 0, right: 5, bottom: 0,
-};
+import { useStoreSelector } from '../../../store/store';
 
 const LABEL_GAP = 25;
 const CHARACTER_SIZE = 8;
 
 export function AllTasksTimeline({
-  participantData, width, height, setSelectedTask, selectedTask, maxDuration,
-} : {participantData: ParticipantData, width: number, height: number, setSelectedTask: (task: string | null) => void, selectedTask: string | null, maxDuration?: number}) {
-  const xScale = useMemo(() => {
-    const allStartTimes = Object.values(participantData.answers || {}).map((answer) => [answer.startTime, answer.endTime]).flat();
+  xScale, participantData, width, height, setSelectedTask, trialFilter,
+} : {xScale: d3.ScaleLinear<number, number>, participantData: ParticipantData, width: number, height: number, setSelectedTask: (task: string) => void, trialFilter?: string }) {
+  const { analysisTrialName: selectedTask } = useStoreSelector((state) => state);
 
-    const extent = d3.extent(allStartTimes) as [number, number];
-
-    const scale = d3.scaleLinear([margin.left, width + margin.left + margin.right]).domain(maxDuration ? [extent[0], extent[0] + maxDuration] : extent).clamp(true);
-
-    return scale;
-  }, [maxDuration, participantData.answers, width]);
-
+  // Creating labels for the tasks
   const tasks = useMemo(() => {
     let currentHeight = 0;
 
-    const sortedEntries = Object.entries(participantData.answers || {}).sort((a, b) => a[1].startTime - b[1].startTime);
+    const sortedEntries = Object.entries(participantData.answers || {}).filter((entry) => (trialFilter ? entry[0] === trialFilter : true)).sort((a, b) => a[1].startTime - b[1].startTime);
 
     return sortedEntries.map((entry, i) => {
       const [name, answer] = entry;
@@ -41,34 +32,14 @@ export function AllTasksTimeline({
         currentHeight = 0;
       }
 
-      return (
-        <SingleTask labelHeight={currentHeight * LABEL_GAP} key={name} isSelected={selectedTask === name} setSelectedTask={setSelectedTask} answer={answer} height={height} name={name} xScale={xScale} />
-      );
+      return {
+        line: <SingleTaskLabelLines key={name} labelHeight={currentHeight * LABEL_GAP} answer={answer} height={height} xScale={xScale} />,
+        label: <SingleTask key={name} labelHeight={currentHeight * LABEL_GAP} isSelected={trialFilter ? false : selectedTask === name} setSelectedTask={setSelectedTask} answer={answer} height={height} name={name} xScale={xScale} />,
+      };
     });
   }, [height, participantData.answers, selectedTask, setSelectedTask, xScale]);
 
-  const lines = useMemo(() => {
-    let currentHeight = 0;
-
-    const sortedEntries = Object.entries(participantData.answers || {}).sort((a, b) => a[1].startTime - b[1].startTime);
-
-    return sortedEntries.map((entry, i) => {
-      const [name, answer] = entry;
-
-      const prev = i > 0 ? sortedEntries[i - currentHeight - 1] : null;
-
-      if (prev && prev[0].length * CHARACTER_SIZE + xScale(prev[1].startTime) > xScale(answer.startTime)) {
-        currentHeight += 1;
-      } else {
-        currentHeight = 0;
-      }
-
-      return (
-        <SingleTaskLabelLines labelHeight={currentHeight * LABEL_GAP} key={name} answer={answer} height={height} xScale={xScale} />
-      );
-    });
-  }, [height, participantData.answers, selectedTask, setSelectedTask, xScale]);
-
+  // Find entries of someone browsing away. Show them
   const browsedAway = useMemo(() => {
     const sortedEntries = Object.entries(participantData.answers || {}).sort((a, b) => a[1].startTime - b[1].startTime);
 
@@ -103,8 +74,8 @@ export function AllTasksTimeline({
 
   return (
     <svg style={{ width, height, overflow: 'visible' }}>
-      {lines}
-      {tasks}
+      {tasks.map((t) => t.line)}
+      {tasks.map((t) => t.label)}
       {browsedAway}
     </svg>
   );

@@ -1,5 +1,4 @@
 import { Stack } from '@mantine/core';
-
 import { useState } from 'react';
 import { Analysis } from './Analysis';
 import ComponentController from '../../../controllers/ComponentController';

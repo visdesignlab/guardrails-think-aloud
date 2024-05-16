@@ -37,6 +37,7 @@ import { ProvenanceWrapper } from './interface/audioAnalysis/ProvenanceWrapper';
 import { StorageEngine } from '../storage/engines/StorageEngine';
 import { AnalysisHome } from './interface/audioAnalysis/AnalysisHome';
 import { PREFIX } from './Prefix';
+import { Analysis } from './interface/audioAnalysis/Analysis';
 
 async function fetchStudyConfig(configLocation: string, configKey: string) {
   const config = await (await fetch(`${PREFIX}${configLocation}`)).text();
@@ -67,7 +68,12 @@ export function GenerateStudiesRoutes({ studyId, config, storage }: {
 
       stepRoutes.push({
         path: '/analysis/:trrackId/:trialName/',
-        element: <ProvenanceWrapper />,
+        element: <ComponentController />,
+      });
+
+      stepRoutes.push({
+        path: '/analysis/:trrackId/ui/:trialFilter?/',
+        element: <Analysis setProvState={() => null} />,
       });
 
       stepRoutes.push({

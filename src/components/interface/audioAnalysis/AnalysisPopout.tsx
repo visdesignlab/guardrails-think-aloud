@@ -1,32 +1,36 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
-  Box, Button, Center, Divider, Group, Highlight, Loader, Menu, Popover, ScrollArea, Stack, Text, TextInput, Tooltip,
+  ActionIcon,
+  Box, Button, Center, Group, Loader, Select, Stack, Text,
 } from '@mantine/core';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
-  useCallback, useEffect, useRef, useState,
+  useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
 import { useResizeObserver } from '@mantine/hooks';
 import { WaveForm, useWavesurfer } from 'wavesurfer-react';
 import WaveSurferContext from 'wavesurfer-react/dist/contexts/WaveSurferContext';
-import * as icons from '@tabler/icons-react';
+import Crunker from 'crunker';
+import * as d3 from 'd3';
+import { Registry, Trrack, initializeTrrack } from '@trrack/core';
+import WaveSurfer from 'wavesurfer.js';
+import { IconArrowLeft, IconArrowRight } from '@tabler/icons-react';
+import { useThrottledState } from 'mantine-v7';
 import { useStorageEngine } from '../../../store/storageEngineHooks';
 import { useAsync } from '../../../store/hooks/useAsync';
 import { StorageEngine } from '../../../storage/engines/StorageEngine';
 import { AllTasksTimeline } from './AllTasksTimeline';
 import { SingleTaskTimeline } from './SingleTaskTimeline';
-import { AudioTag } from '../../../store/types';
-import { useTextHighlight } from '../../../store/hooks/useTextHighlight';
 import { useStudyConfig } from '../../../store/hooks/useStudyConfig';
+import { deepCopy } from '../../../utils/deepCopy';
+import { useEvent } from '../../../store/hooks/useEvent';
+import { useStoreActions, useStoreDispatch, useStoreSelector } from '../../../store/store';
+import { TranscriptLines } from './TransciptLines';
+import { TextEditor } from './TextEditor';
 
-export interface TranscribedAudioSnippet {
-  alternatives: {confidence: number, transcript: string}[]
-  languageCode: string;
-  resultEndTime: string;
-}
-export interface TranscribedAudio {
-  results: TranscribedAudioSnippet[]
-}
+const margin = {
+  left: 5, top: 0, right: 5, bottom: 0,
+};
 
 function getParticipantData(trrackId: string | undefined, storageEngine: StorageEngine | undefined) {
   if (storageEngine) {
@@ -36,96 +40,208 @@ function getParticipantData(trrackId: string | undefined, storageEngine: Storage
   return null;
 }
 
-function getAllParticipantsData(storageEngine: StorageEngine | undefined) {
-  if (storageEngine) {
-    return storageEngine.getAllParticipantsData();
-  }
+const inPersonIds = ['participant1',
+  'participant2',
+  'participant3',
+  'participant4',
+  'participant5',
+  'participant6',
+  'participant7',
+  'participant8',
+  'participant9',
+  'participant10',
+  'participant11'];
 
-  return null;
-}
+const prolificIds = ['64889a71fa7592ae332fa34f',
+  '63626a68cf44b4184483c8e8',
+  '5c838a63532afd001506fd34',
+  '6171849094893d838e6e6f62',
+  '5b14898a30d562000155f1e9',
+  '5ba42e35984ec30001c6018d',
+  '5e690f83d1e0d41a69f00db8',
+  '65c10e659858a125507f47f7',
+  '616c844bac81732b87340f97',
+  '63f7a3b799889de3f13622db',
+  '65a4333efc75f965e7fc0cb5',
+  '65dca61cadaa2dd820a0f28c',
+  '65a00ba072965b5ce928d307',
+  '5cb3cdc781f3750001043bf2',
+  '5d76ac914c93440001c03fd7',
+  '65c691b5ca603ec8e389700e',
+  '5d31dc6e42678e001a0bdedd',
+  '6294ce94ea81c4554b141010',
+  '60743e408fd768b1a939ed4c',
+  '638a8c63c74f91261108cebf',
+  '5780d9a1900cc80001d2d1c2',
+  '5fa07c635b16f50d21483d5e',
+  '63ee65e3470c23cb401ca89a',
+  '5b99663d4cefb60001e7a214',
+  '63162bda14b96736b08a554d',
+  '6554e79557e3d6be08e32ceb',
+  '63d5021468a31efc02740c1e',
+  '63fbf0e3b18cc14adc0dbfb6',
+  '63beebaa4c5884797ff00a98',
+  '64217d8202361ad4dbed3596',
+  '58ff31a1d10e2b000108579e',
+  '63f779d27ba18edb4b6e5a57',
+  '62e023ae6d022e4d7bfc5db1',
+  '5e5521580ee1b951df544c3c',
+  '5bb756696322c5000159756c',
+  '637545d6428d85daeedc3df5',
+  '641ecfa9f83175a3d9f63636',
+  '611a8d23c1d17506a23df589',
+  '605e622287f0e806ffe04590'];
 
-function getSequenceArray(storageEngine: StorageEngine | undefined) {
-  if (storageEngine) {
-    return storageEngine.getSequence();
-  }
-
-  return null;
-}
-
-function getAudioTags(storageEngine: StorageEngine | undefined) {
-  if (storageEngine) {
-    return storageEngine.getAudioTags();
-  }
-
-  return null;
-}
-
-function getTextTags(participantId: string, storageEngine: StorageEngine | undefined) {
-  if (storageEngine) {
-    return storageEngine.getTextTags(participantId);
-  }
-
-  return null;
-}
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function AnalysisPopout({ cssUpdate, popoutWindow } : {cssUpdate: () => void, popoutWindow: Window}) {
-  const { trrackId, trialName, studyId } = useParams();
+export function AnalysisPopout() {
+  const { trrackId, trialFilter } = useParams();
 
   const { storageEngine } = useStorageEngine();
 
+  const [currentShownTranscription, setCurrentShownTranscription] = useState(0);
+
   const [ref, { width }] = useResizeObserver();
 
-  const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [currentNode, setCurrentNode] = useState<string | null>(null);
-
-  const [transcription, setTranscription] = useState<TranscribedAudio[] | null>(null);
-  const [currentShownTranscription, setCurrentShownTranscription] = useState<number | null>(null);
-
-  const { value: sequence, status: sequenceStatus } = useAsync(getSequenceArray, [storageEngine]);
 
   const { value: participant, status } = useAsync(getParticipantData, [trrackId, storageEngine]);
 
-  const { value: allParts, status: allPartsStatus } = useAsync(getAllParticipantsData, [storageEngine]);
-
-  const { value: audioTags, status: audioTagsStatus, execute: refetchTags } = useAsync(getAudioTags, [storageEngine]);
-  const { value: textTags, status: textTagsStatus, execute: refetchTextTags } = useAsync(getTextTags, [trrackId || '', storageEngine]);
+  const { saveAnalysisState } = useStoreActions();
+  const storeDispatch = useStoreDispatch();
 
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [playTime, setPlayTime] = useState<number>(0);
+  const [playTime, setPlayTime] = useThrottledState<number>(0, 200);
 
-  const [addedTag, setAddedTag] = useState<AudioTag>({ name: '', icon: '' });
-
-  const highlightedAudio = useTextHighlight(popoutWindow);
   const waveSurferDiv = useRef(null);
 
-  const [hasHighlight, setHasHighlight] = useState<boolean>(false);
   const config = useStudyConfig();
 
-  cssUpdate();
+  const navigate = useNavigate();
+
+  const { analysisTrialName: trialName } = useStoreSelector((state) => state);
+
+  const { setAnalysisTrialName } = useStoreActions();
+
+  const [waveSurferLoading, setWaveSurferLoading] = useState<boolean>(true);
+
+  const trrackForTrial = useRef<Trrack<object, string> | null>(null);
+
+  const [transcriptLines, setTranscriptLines] = useState<{start: number, end: number, lineStart: number, lineEnd: number}[]>([]);
+
+  const allPartIds = useMemo(() => [...inPersonIds, ...prolificIds], []);
+  // Create an instance of trrack to ensure getState works, incase the saved state is not a full state node.
+  useEffect(() => {
+    if (trialName && participant) {
+      const reg = Registry.create();
+
+      const trrack = initializeTrrack({ registry: reg, initialState: {} });
+
+      if (participant.answers[trialName].provenanceGraph) {
+        trrack.importObject(deepCopy(participant.answers[trialName].provenanceGraph!));
+
+        trrackForTrial.current = trrack;
+      }
+    }
+  }, [participant, trialName]);
+
+  const _setCurrentNode = useCallback((node: string) => {
+    // if (trialName && participant && trrackForTrial) {
+    //   setProvState(trrackForTrial.getState(participant.answers[trialName].provenanceGraph?.nodes[node]));
+
+    //   trrackForTrial.to(node);
+    // }
+
+    if (trialName && participant && trrackForTrial.current) {
+      // setProvState(trrackForTrial.getState(participant.answers[trialName].provenanceGraph?.nodes[currentNode]));
+      storeDispatch(saveAnalysisState(trrackForTrial.current.getState(participant.answers[trialName].provenanceGraph?.nodes[node])));
+
+      trrackForTrial.current.to(node);
+    }
+
+    setCurrentNode(node);
+  }, [participant, saveAnalysisState, storeDispatch, trialName, trrackForTrial]);
+
+  const setSelectedTask = useCallback((s: string) => {
+    if (s !== trialName) {
+      storeDispatch(setAnalysisTrialName(s));
+      storeDispatch(saveAnalysisState(null));
+
+      if (participant && participant.answers[s].provenanceGraph) {
+        const reg = Registry.create();
+
+        const trrack = initializeTrrack({ registry: reg, initialState: {} });
+
+        trrack.importObject(deepCopy(participant.answers[s].provenanceGraph!));
+
+        trrackForTrial.current = trrack;
+
+        _setCurrentNode(participant.answers[s].provenanceGraph?.root || '');
+      } else {
+        storeDispatch(saveAnalysisState(null));
+        setCurrentNode(null);
+        trrackForTrial.current = null;
+      }
+    }
+  }, [_setCurrentNode, participant, saveAnalysisState, setAnalysisTrialName, storeDispatch, trialName]);
+
+  useEffect(() => {
+    if (trialFilter) {
+      setSelectedTask(trialFilter);
+    }
+  }, [setSelectedTask, trialFilter]);
+
+  const timeUpdate = useEvent((t: number) => {
+    // check if were on the next task. If so, navigate to the next task
+    if (participant && trialName && (participant.answers[trialName].endTime - participant.answers.audioTest.startTime) / 1000 < t) {
+      setSelectedTask(participant.sequence[participant.sequence.indexOf(trialName) + 1]);
+    } else if (participant && trialName && trrackForTrial.current && trrackForTrial.current.current.children.length > 0 && (trrackForTrial.current.graph.backend.nodes[trrackForTrial.current.current.children[0]].createdOn - participant.answers.audioTest.startTime) / 1000 < t) {
+      _setCurrentNode(trrackForTrial.current.current.children[0]);
+    }
+
+    if (participant && trialName) {
+      const startTime = (trialFilter ? participant.answers[trialFilter].startTime : participant.answers.audioTest.startTime);
+      setPlayTime(t * 1000 + startTime);
+    }
+  });
 
   const handleWSMount = useCallback(
-    (waveSurfer: any) => {
-      if (waveSurfer) {
-        storageEngine?.getAudio(trrackId!).then((url) => {
+    (waveSurfer: WaveSurfer | null) => {
+      if (waveSurfer && participant && trrackId) {
+        const crunker = new Crunker();
+
+        storageEngine?.getAudio(participant.sequence.filter((seq) => config.tasksToNotRecordAudio === undefined || !config.tasksToNotRecordAudio.includes(seq)).filter((seq) => (trialFilter ? seq === trialFilter : true)), trrackId).then((urls) => {
           if (waveSurfer) {
-            waveSurfer.load(url);
-            setCurrentShownTranscription(2);
+            crunker
+              .fetchAudio(...urls)
+              .then((buffers) => crunker.concatAudio(buffers))
+              .then((merged) => crunker.export(merged, 'audio/mp3'))
+              .then((output) => waveSurfer.loadBlob(output.blob).then(() => setWaveSurferLoading(false)))
+              .catch((error) => {
+                throw new Error(error);
+              });
           }
+
+          waveSurfer.on('timeupdate', timeUpdate);
         });
       }
     },
-    [storageEngine, trrackId],
+    [config.tasksToNotRecordAudio, participant, storageEngine, timeUpdate, trialFilter, trrackId],
   );
 
   const wavesurfer = useWavesurfer({ container: waveSurferDiv.current!, plugins: [], onMount: handleWSMount });
 
+  useEffect(() => {
+    handleWSMount(wavesurfer);
+  }, [handleWSMount, participant, wavesurfer]);
+
   const _setPlayTime = useCallback((n: number, percent: number) => {
+    const startTime = participant ? participant.answers.audioTest.startTime : null;
     setPlayTime(n);
 
     if (wavesurfer && percent) {
-      wavesurfer?.seekTo(percent);
+      wavesurfer?.setTime(startTime ? (n - startTime) / 1000 : 0);
     }
-  }, [wavesurfer]);
+  }, [participant, setPlayTime, wavesurfer]);
 
   const _setIsPlaying = useCallback((b: boolean) => {
     setIsPlaying(b);
@@ -139,36 +255,79 @@ export function AnalysisPopout({ cssUpdate, popoutWindow } : {cssUpdate: () => v
     }
   }, [wavesurfer]);
 
-  useEffect(() => {
-    if (studyId && trrackId && sequence) {
-      storageEngine?.getTranscription(sequence.filter((seq) => config.tasksToNotRecordAudio === undefined || !config.tasksToNotRecordAudio.includes(seq)), trrackId).then((data) => {
-        setTranscription(data.map((d) => JSON.parse(d)));
-      });
+  const xScale = useMemo(() => {
+    if (!participant) {
+      return null;
     }
-  }, [storageEngine, studyId, trrackId, sequence, config.tasksToNotRecordAudio]);
+    const allStartTimes = Object.values(participant.answers || {}).map((answer) => [answer.startTime, answer.endTime]).flat();
 
-  //   console.log(transcription);
+    const extent = d3.extent(allStartTimes) as [number, number];
 
-  //   console.log(trrackId);
+    const scale = d3.scaleLinear([margin.left, width + margin.left + margin.right]).domain(trialFilter ? [participant.answers[trialFilter].startTime, participant.answers[trialFilter].endTime] : extent).clamp(true);
 
-  //   console.log(highlightedAudio?.toString());
+    return scale;
+  }, [participant, trialFilter, width]);
+
+  const nextParticipantCallback = useCallback((positive: boolean) => {
+    if (!participant) {
+      return;
+    }
+
+    const index = allPartIds.indexOf(participant.participantId);
+
+    if (positive) {
+      navigate(`../../${trialFilter ? '../' : ''}${allPartIds[index + 1]}/ui/${trialFilter || ''}`, { relative: 'path' });
+    } else {
+      navigate(`../../${trialFilter ? '../' : ''}${allPartIds[index - 1]}/ui/${trialFilter || ''}`, { relative: 'path' });
+    }
+  }, [allPartIds, navigate, participant, trialFilter]);
 
   return (
     <Group noWrap spacing={25}>
       <Stack ref={ref} style={{ width: '100%' }} spacing={25}>
-        {status === 'success' && participant ? <AllTasksTimeline selectedTask={selectedTask} setSelectedTask={setSelectedTask} participantData={participant} width={width} height={200} /> : <Center style={{ height: '275px' }}><Loader /></Center>}
-        {status === 'success' && participant ? <SingleTaskTimeline setSelectedTask={setSelectedTask} playTime={playTime} setPlayTime={_setPlayTime} isPlaying={isPlaying} setIsPlaying={_setIsPlaying} currentNode={currentNode} setCurrentNode={setCurrentNode} selectedTask={selectedTask} participantData={participant} width={width} height={50} /> : null}
-        <Box ref={waveSurferDiv} style={{ width: '100%' }}>
+        <Center>
+          <Group>
+            <ActionIcon>
+              <IconArrowLeft onClick={() => nextParticipantCallback(false)} />
+            </ActionIcon>
+            <Select style={{ width: '300px' }} value={participant?.participantId} data={[...inPersonIds, ...prolificIds]} />
+            <Select
+              style={{ width: '300px' }}
+              clearable
+              value={trialFilter}
+              data={participant ? [...participant.sequence] : []}
+              onChange={(val) => navigate(`${trialFilter ? '../' : ''}${val || ''}`, { relative: 'path' })}
+            />
+            <ActionIcon>
+              <IconArrowRight onClick={() => nextParticipantCallback(true)} />
+            </ActionIcon>
+          </Group>
+        </Center>
+        {status === 'success' && participant && xScale ? <AllTasksTimeline trialFilter={trialFilter} xScale={xScale} setSelectedTask={setSelectedTask} participantData={participant} width={width} height={200} /> : <Center style={{ height: '275px' }}><Loader /></Center>}
+        {status === 'success' && participant && xScale ? <SingleTaskTimeline xScale={xScale} setSelectedTask={setSelectedTask} playTime={playTime - participant.answers.introduction.startTime} setPlayTime={_setPlayTime} isPlaying={isPlaying} setIsPlaying={_setIsPlaying} currentNode={currentNode} setCurrentNode={_setCurrentNode} participantData={participant} width={width} height={50} /> : null}
+        { xScale && participant !== null
+          ? (
+            <>
+              <Box
+                ref={waveSurferDiv}
+                ml={participant && xScale ? xScale(participant.answers.audioTest.startTime) : 0}
+                mr={participant && xScale ? xScale(participant.answers['post-study-survey'].startTime) : 0}
+                style={{
+                  WebkitBoxSizing: 'border-box', width: `${participant && xScale ? xScale(participant.answers['post-study-survey'].startTime) - xScale(participant.answers.audioTest.startTime) : 0}px`,
+                }}
+              >
+                <WaveSurferContext.Provider value={wavesurfer} key={participant.participantId}>
+                  <WaveForm id="waveform" />
+                </WaveSurferContext.Provider>
+                {waveSurferLoading ? <Loader /> : null}
+              </Box>
+              <TranscriptLines startTime={trialFilter ? xScale.domain()[0] : participant.answers.audioTest.startTime} xScale={xScale} transcriptLines={transcriptLines} currentShownTranscription={currentShownTranscription} />
+            </>
+          ) : null }
 
-          <WaveSurferContext.Provider value={wavesurfer}>
-            <WaveForm id="waveform" />
-          </WaveSurferContext.Provider>
-        </Box>
         <Group style={{ width: '100%', height: '100px' }} align="center" position="center">
           <Center>
-            <Text color="dimmed" size={20} style={{ width: '100%' }}>
-              {/* {transcription && currentShownTranscription !== null ? transcription.results[currentShownTranscription].alternatives[0].transcript : ''} */}
-            </Text>
+            <Text color="dimmed" size={20} style={{ width: '100%' }} />
           </Center>
         </Group>
         <Group>
@@ -177,55 +336,9 @@ export function AnalysisPopout({ cssUpdate, popoutWindow } : {cssUpdate: () => v
           <Text>{new Date(playTime).toLocaleString()}</Text>
         </Group>
 
-        <Text>
-          {transcription?.map((d) => (d.results ? d.results.map((res) => res.alternatives[0].transcript).join(' ') : '' || '')).join(' ')}
-        </Text>
-      </Stack>
-      {/* <Divider orientation="vertical" ml={25} />
-        <Stack style={{ width: '300px', height: '100%' }}>
-          <ScrollArea h={380}>
-            <Stack>
-              {allPartsStatus === 'success' && allParts ? allParts.map((part) => (
-                <Text
-                  onClick={() => {
-                    const splitArr = location.pathname.split('/');
-                    splitArr[splitArr.length - 2] = part.participantId;
-                    navigate(splitArr.join('/'));
-                  }}
-                  color={trrackId === part.participantId ? 'cornflowerblue' : 'dimmed'}
-                  key={part.participantId}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {part.participantId}
-                </Text>
-              )) : null}
-            </Stack>
-          </ScrollArea>
-        </Stack> */}
-
-      <Divider orientation="vertical" ml={25} />
-      <Stack style={{ width: '300px', height: '100%' }}>
-        <ScrollArea h={380}>
-          <Stack>
-            <Popover width={200} trapFocus position="bottom" withArrow shadow="md">
-              <Popover.Target>
-                <Button>Create new tag</Button>
-              </Popover.Target>
-              <Popover.Dropdown>
-                <TextInput value={addedTag.name} onChange={(event) => setAddedTag({ ...addedTag, name: event.currentTarget.value })} label="Name" placeholder="Name" size="xs" />
-                <TextInput value={addedTag.icon} onChange={(event) => setAddedTag({ ...addedTag, icon: event.currentTarget.value })} label="Icon" placeholder="icon" size="xs" mt="xs" />
-                <Button onClick={() => storageEngine?.saveAudioTags([...(audioTags || []), addedTag]).then(() => refetchTags(storageEngine))}>Create Tag</Button>
-              </Popover.Dropdown>
-            </Popover>
-            {audioTags ? audioTags.map((tag) => (
-              <Group key={tag.name}>
-                <Text key={tag.name}>
-                  {tag.name}
-                </Text>
-              </Group>
-            )) : null}
-          </Stack>
-        </ScrollArea>
+        <Stack>
+          {participant ? <TextEditor setCurrentShownTranscription={setCurrentShownTranscription} currentShownTranscription={currentShownTranscription} participant={participant} playTime={playTime} setTranscriptLines={setTranscriptLines as any} /> : null}
+        </Stack>
       </Stack>
     </Group>
   );

@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useState } from 'react';
 import merge from 'lodash.merge';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import ResponseBlock from '../components/response/ResponseBlock';
 import IframeController from './IframeController';
 import ImageController from './ImageController';
@@ -36,13 +36,25 @@ export default function ComponentController({ provState } : {provState?: unknown
 
   const [audioStream, setAudioStream] = useState<MediaRecorder | null>(null);
   const dispatch = useStoreDispatch();
-  const { setIsRecording } = useStoreActions();
+  const { setIsRecording, setAnalysisTrialName } = useStoreActions();
+  const { analysisTrialName, analysisProvState } = useStoreSelector((state) => state);
 
-  const { trialName } = useParams();
+  const navigate = useNavigate();
+
   const [prevTrialName, setPrevTrialName] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!trialName || !studyConfig || !studyConfig.recordStudyAudio || !storage.storageEngine) {
+    dispatch(setAnalysisTrialName(currentStep!));
+  }, [dispatch, setAnalysisTrialName, currentStep]);
+
+  useEffect(() => {
+    if (currentStep && analysisTrialName && currentStep !== analysisTrialName) {
+      navigate(`../${analysisTrialName}`);
+    }
+  }, [analysisTrialName, currentStep, navigate]);
+
+  useEffect(() => {
+    if (!currentStep || !studyConfig || !studyConfig.recordStudyAudio || !storage.storageEngine) {
       return;
     }
 
@@ -50,7 +62,7 @@ export default function ComponentController({ provState } : {provState?: unknown
       storage.storageEngine.saveAudio(audioStream, prevTrialName);
     }
 
-    if (studyConfig.tasksToNotRecordAudio && studyConfig.tasksToNotRecordAudio.includes(trialName)) {
+    if (studyConfig.tasksToNotRecordAudio && studyConfig.tasksToNotRecordAudio.includes(currentStep)) {
       setPrevTrialName(null);
       setAudioStream(null);
       dispatch(setIsRecording(false));
@@ -66,7 +78,7 @@ export default function ComponentController({ provState } : {provState?: unknown
         setAudioStream(mediaRecorder);
         dispatch(setIsRecording(true));
       });
-      setPrevTrialName(trialName);
+      setPrevTrialName(currentStep);
     }
 
     // return () => {
@@ -76,7 +88,7 @@ export default function ComponentController({ provState } : {provState?: unknown
     //     });
     //   }
     // };
-  }, [trialName]);
+  }, [currentStep]);
 
   // Disable browser back button from all stimuli
   disableBrowserBack();
@@ -108,7 +120,7 @@ export default function ComponentController({ provState } : {provState?: unknown
         {currentConfig.type === 'markdown' && <MarkdownController currentConfig={currentConfig} />}
         {currentConfig.type === 'website' && <IframeController currentConfig={currentConfig} />}
         {currentConfig.type === 'image' && <ImageController currentConfig={currentConfig} />}
-        {currentConfig.type === 'react-component' && <ReactComponentController currentConfig={currentConfig} provState={provState} />}
+        {currentConfig.type === 'react-component' && <ReactComponentController currentConfig={currentConfig} provState={analysisProvState} />}
       </Suspense>
 
       {(instructionLocation === 'belowStimulus' || (instructionLocation === undefined && !instructionInSideBar)) && <ReactMarkdownWrapper text={instruction} />}

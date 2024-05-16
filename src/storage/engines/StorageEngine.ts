@@ -43,15 +43,15 @@ export abstract class StorageEngine {
 
   abstract setSequenceArray(latinSquare: string[][]): Promise<void>;
 
-  abstract getSequenceArray(): Promise<string[][] | null>;
+  abstract getSequenceArray(participantId?: string): Promise<string[][] | null>;
 
-  abstract getSequence(): Promise<string[]>;
+  abstract getSequence(participantId?: string): Promise<string[]>;
 
   abstract getAllParticipantsData(): Promise<ParticipantData[]>;
 
   abstract getParticipantData(participantId?: string): Promise<ParticipantData | null>;
 
-  abstract getAudio(participantId?: string): Promise<string>;
+  abstract getAudio(taskList: string[], participantId?: string): Promise<string[]>;
 
   abstract getTranscription(taskList: string[], participantId?: string): Promise<string[]>;
 

@@ -1,6 +1,9 @@
-import { createSlice, configureStore, type PayloadAction } from '@reduxjs/toolkit';
+import {
+  createSlice, configureStore, type PayloadAction, applyMiddleware,
+} from '@reduxjs/toolkit';
 import { createContext, useContext } from 'react';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
+import { createStateSyncMiddleware, initMessageListener, initStateWithPrevTab } from 'redux-state-sync';
 import { ResponseBlockLocation, StudyConfig } from '../parser/types';
 import {
   StoredAnswer, TrialValidation, TrrackedProvenance, StoreState,
@@ -37,6 +40,8 @@ export async function studyStoreCreator(
     alertModal: { show: false, message: '' },
     trialValidation: answers ? allValid : emptyValidation,
     iframeAnswers: [] as string[],
+    analysisTrialName: null,
+    analysisProvState: null,
   };
 
   const storeSlice = createSlice({
@@ -60,6 +65,9 @@ export async function studyStoreCreator(
       },
       setIframeAnswers: (state, action: PayloadAction<string[]>) => {
         state.iframeAnswers = action.payload;
+      },
+      setAnalysisTrialName: (state, action: PayloadAction<string | null>) => {
+        state.analysisTrialName = action.payload;
       },
       updateResponseBlockValidation: (
         state,
@@ -89,6 +97,9 @@ export async function studyStoreCreator(
           state.trialValidation[payload.currentStep].provenanceGraph = payload.provenanceGraph;
         }
       },
+      saveAnalysisState(state, { payload } : PayloadAction<unknown>) {
+        state.analysisProvState = payload;
+      },
       saveTrialAnswer(
         state,
         {
@@ -110,12 +121,17 @@ export async function studyStoreCreator(
     },
   });
 
+  const middlewares = [createStateSyncMiddleware({})];
+
   const store = configureStore(
     {
       reducer: storeSlice.reducer,
       preloadedState: initialState,
+      middleware: middlewares,
     },
   );
+
+  initStateWithPrevTab(store);
 
   return { store, actions: storeSlice.actions };
 }

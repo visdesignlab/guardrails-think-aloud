@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { from, escape } from 'arquero';
 import ColumnTable from 'arquero/dist/types/table/column-table';
-import { Registry, initializeTrrack } from '@trrack/core';
+import { Registry, initializeTrrack, initializeProvenanceGraph } from '@trrack/core';
 import * as d3 from 'd3';
 import debounce from 'lodash.debounce';
 import { Scatter } from './Scatter';
@@ -19,14 +19,14 @@ import { BrushParams, BrushState, SelectionType } from './types';
 import { Histogram } from './Histogram';
 import { Violin } from './Violin';
 
-export function BrushPlot({ parameters, setAnswer }: StimulusParams<BrushParams>) {
+export function BrushPlot({ parameters, setAnswer, provenanceState }: StimulusParams<BrushParams>) {
   const [filteredTable, setFilteredTable] = useState<ColumnTable | null>(null);
-  const [brushState, setBrushState] = useState<{ [n: number] : BrushState, selection: string[] }>(parameters.brushState ? { ...parameters.brushState, selection: [] } : {
+  const [brushState, setBrushState] = useState<{ [n: number] : BrushState, selection: string[] }>((parameters.brushState ? { ...parameters.brushState, selection: [] } : {
     0: {
       hasBrush: false, x1: 0, y1: 0, x2: 0, y2: 0, xCol: parameters.x, yCol: parameters.y, id: 0, type: 'scatter',
     },
     selection: [],
-  });
+  }));
 
   const [isPaintbrushSelect, setIsPaintbrushSelect] = useState<boolean>(true);
 
@@ -34,7 +34,7 @@ export function BrushPlot({ parameters, setAnswer }: StimulusParams<BrushParams>
 
   // load data
   useEffect(() => {
-    d3.csv(`./data/${parameters.dataset}.csv`).then((_data) => {
+    d3.csv(`/ThinkAloud/data/${parameters.dataset}.csv`).then((_data) => {
       setData(_data);
     });
   }, [parameters]);
@@ -46,6 +46,21 @@ export function BrushPlot({ parameters, setAnswer }: StimulusParams<BrushParams>
 
     return null;
   }, [data]);
+
+  useEffect(() => {
+    if (provenanceState) {
+      const currState = provenanceState.all.brush || provenanceState.all;
+      setBrushState(currState);
+
+      const selectionSet = new Set(currState.selection);
+
+      if (fullTable) {
+        const _filteredTable = fullTable!.filter(escape((d: any) => selectionSet.has(d[parameters.ids])));
+
+        setFilteredTable(_filteredTable);
+      }
+    }
+  }, [fullTable, parameters.ids, provenanceState]);
 
   // creating provenance tracking
   const { actions, trrack } = useMemo(() => {

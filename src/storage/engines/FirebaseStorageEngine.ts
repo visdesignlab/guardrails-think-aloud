@@ -261,13 +261,14 @@ export class FirebaseStorageEngine extends StorageEngine {
   }
 
   async getAudio(
+    taskList: string[],
     participantId: string,
   ) {
     const storage = getStorage();
 
-    const url = await getDownloadURL(ref(storage, `${this.studyId}/audio/${participantId}`));
+    const urlList = await Promise.all(taskList.map(async (task) => await getDownloadURL(ref(storage, `${this.studyId}/audio/${participantId}_${task}`))));
 
-    return new Promise<string>((resolve) => {
+    const allAudioList = Promise.all(urlList.map((url) => new Promise<string>((resolve) => {
       const xhr = new XMLHttpRequest();
       xhr.responseType = 'blob';
       xhr.onload = () => {
@@ -279,7 +280,9 @@ export class FirebaseStorageEngine extends StorageEngine {
       };
       xhr.open('GET', url);
       xhr.send();
-    });
+    })));
+
+    return allAudioList;
   }
 
   async getTranscription(
@@ -327,7 +330,7 @@ export class FirebaseStorageEngine extends StorageEngine {
     return sequenceArrayDocData.sequenceArray;
   }
 
-  async getSequence() {
+  async getSequence(participantId: string) {
     if (!this._verifyStudyDatabase(this.studyCollection)) {
       throw new Error('Study database not initialized');
     }
@@ -345,8 +348,8 @@ export class FirebaseStorageEngine extends StorageEngine {
     // Note intent to get a sequence in the sequenceAssignment collection
     const sequenceAssignmentDoc = doc(this.studyCollection, 'sequenceAssignment');
     const sequenceAssignmentCollection = collection(sequenceAssignmentDoc, 'sequenceAssignment');
-    const participantSequenceAssignmentDoc = doc(sequenceAssignmentCollection, this.currentParticipantId);
-    await setDoc(participantSequenceAssignmentDoc, { participantId: this.currentParticipantId, timestamp: serverTimestamp() });
+    const participantSequenceAssignmentDoc = doc(sequenceAssignmentCollection, participantId || this.currentParticipantId);
+    await setDoc(participantSequenceAssignmentDoc, { participantId: participantId || this.currentParticipantId, timestamp: serverTimestamp() });
 
     // Query all the intents to get a sequence and find our position in the queue
     const intentsQuery = query(sequenceAssignmentCollection, orderBy('timestamp', 'asc'));
@@ -354,7 +357,7 @@ export class FirebaseStorageEngine extends StorageEngine {
     const intents = intentDocs.docs.map((intent) => intent.data());
 
     // Get the current row
-    const intentIndex = intents.findIndex((intent) => intent.participantId === this.currentParticipantId);
+    const intentIndex = intents.findIndex((intent) => intent.participantId === participantId || this.currentParticipantId);
     const currentRow = sequenceArray[intentIndex % sequenceArray.length];
 
     if (!currentRow) {

@@ -58,4 +58,6 @@ export interface StoreState {
   alertModal: { show: boolean, message: string };
   trialValidation: TrialValidation;
   iframeAnswers: string[];
+  analysisTrialName: string | null;
+  analysisProvState: unknown | null;
 }
