@@ -49,7 +49,7 @@ export function BrushPlot({ parameters, setAnswer, provenanceState }: StimulusPa
 
   useEffect(() => {
     if (provenanceState) {
-      const currState = provenanceState.all.brush || provenanceState.all;
+      const currState = (provenanceState as any).all.brush || (provenanceState as any).all;
       setBrushState(currState);
 
       const selectionSet = new Set(currState.selection);

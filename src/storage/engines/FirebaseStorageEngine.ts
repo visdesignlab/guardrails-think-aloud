@@ -330,7 +330,7 @@ export class FirebaseStorageEngine extends StorageEngine {
     return sequenceArrayDocData.sequenceArray;
   }
 
-  async getSequence(participantId: string) {
+  async getSequence(participantId?: string) {
     if (!this._verifyStudyDatabase(this.studyCollection)) {
       throw new Error('Study database not initialized');
     }

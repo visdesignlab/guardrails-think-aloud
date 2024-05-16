@@ -23,9 +23,9 @@ export class LocalStorageEngine extends StorageEngine {
     throw new Error('Method not implemented.');
   }
 
-  getAudio(participantId?: string | undefined): Promise<string> {
+  getAudio(taskList: string[], participantId?: string | undefined): Promise<string[]> {
     console.warn('not yet implemented', participantId);
-    return Promise.resolve('not implemented');
+    return Promise.resolve(['not implemented']);
   }
 
   getTranscription(taskList: string[], participantId?: string | undefined): Promise<string[]> {
