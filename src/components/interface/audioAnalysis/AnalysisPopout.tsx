@@ -325,11 +325,11 @@ export function AnalysisPopout() {
             </>
           ) : null }
 
-        <Group style={{ width: '100%', height: '100px' }} align="center" position="center">
+        {/* <Group style={{ width: '100%', height: '100px' }} align="center" position="center">
           <Center>
             <Text color="dimmed" size={20} style={{ width: '100%' }} />
           </Center>
-        </Group>
+        </Group> */}
         <Group>
           <Button onClick={() => _setIsPlaying(true)}>Play</Button>
           <Button onClick={() => _setIsPlaying(false)}>Pause</Button>

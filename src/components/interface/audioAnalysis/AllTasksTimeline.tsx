@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import * as d3 from 'd3';
 import { Tooltip } from '@mantine/core';
-import { useParams } from 'react-router';
 import { ParticipantData } from '../../../storage/types';
 import { SingleTask } from './SingleTask';
 import { SingleTaskLabelLines } from './SingleTaskLabelLines';
@@ -37,7 +36,7 @@ export function AllTasksTimeline({
         label: <SingleTask key={name} labelHeight={currentHeight * LABEL_GAP} isSelected={trialFilter ? false : selectedTask === name} setSelectedTask={setSelectedTask} answer={answer} height={height} name={name} xScale={xScale} />,
       };
     });
-  }, [height, participantData.answers, selectedTask, setSelectedTask, xScale]);
+  }, [height, participantData.answers, selectedTask, setSelectedTask, trialFilter, xScale]);
 
   // Find entries of someone browsing away. Show them
   const browsedAway = useMemo(() => {
@@ -72,7 +71,7 @@ export function AllTasksTimeline({
     });
   }, [height, participantData, xScale]);
 
-  return (
+  return trialFilter ? null : (
     <svg style={{ width, height, overflow: 'visible' }}>
       {tasks.map((t) => t.line)}
       {tasks.map((t) => t.label)}
