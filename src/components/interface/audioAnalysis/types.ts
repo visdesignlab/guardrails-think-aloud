@@ -7,3 +7,8 @@ export interface TranscribedAudioSnippet {
 export interface TranscribedAudio {
     results: TranscribedAudioSnippet[]
 }
+
+export interface Tag {
+    color: string,
+    name: string
+}
