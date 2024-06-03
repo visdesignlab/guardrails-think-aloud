@@ -1,143 +1,112 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import * as TiptapHighlight from '@tiptap/extension-highlight';
-import StarterKit from '@tiptap/starter-kit';
-import TextAlign from '@tiptap/extension-text-align';
-import Superscript from '@tiptap/extension-superscript';
-import SubScript from '@tiptap/extension-subscript';
 import {
   useEffect, useRef, useState,
 } from 'react';
 import { useParams } from 'react-router-dom';
-import { RichTextEditor } from '@mantine/tiptap';
-import { Editor } from '@tiptap/core';
-import { Transaction } from '@tiptap/pm/state';
-import { ReplaceStep } from '@tiptap/pm/transform';
-import { useEditor } from '@tiptap/react';
+import {
+  Group, Popover, Stack, Text,
+} from '@mantine/core';
+import { IconPlus } from '@tabler/icons-react';
 import { ParticipantData } from '../../../storage/types';
 import { useStudyConfig } from '../../../store/hooks/useStudyConfig';
 import { useStorageEngine } from '../../../store/storageEngineHooks';
 import { useEvent } from '../../../store/hooks/useEvent';
-
-import ReactComponent from './tiptapExtensions/Extension';
-import { TranscribedAudio } from './types';
-
-interface EditedText {
-  transcriptMappingStart: number;
-  transcriptMappingEnd: number;
-  text: string;
-}
+import {
+  EditedText, Tag, TranscribedAudio, TranscriptLinesWithTimes,
+} from './types';
+import { IconComponent } from './tiptapExtensions/IconComponent';
+import { TagEditor } from './TextEditorComponents/TagEditor';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function TextEditor({
-  participant, playTime, setTranscriptLines, currentShownTranscription, setCurrentShownTranscription,
-} : {participant: ParticipantData, playTime: number, setTranscriptLines: (lines: {start: number, end: number, lineStart: number, lineEnd: number}[]) => void; setCurrentShownTranscription: (i: number) => void; currentShownTranscription: number}) {
+  participant, playTime, setTranscriptLines, currentShownTranscription, setCurrentShownTranscription, transcriptList, setTranscriptList,
+} : {participant: ParticipantData, playTime: number, setTranscriptLines: (lines: TranscriptLinesWithTimes[]) => void; setCurrentShownTranscription: (i: number) => void; currentShownTranscription: number, transcriptList: EditedText[], setTranscriptList: (e: EditedText[]) => void}) {
   const [transcription, setTranscription] = useState<TranscribedAudio | null>(null);
 
   const { trrackId, studyId, trialFilter } = useParams();
 
-  const [editedList, setEditedList] = useState<EditedText[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
 
   const { storageEngine } = useStorageEngine();
 
   const config = useStudyConfig();
 
-  const [textContent, setTextContent] = useState('<p></p>');
+  const textRefs = useRef<HTMLInputElement[]>([]);
 
-  const textChangeCallback = useEvent(({ editor: ed, transaction } : {editor: Editor, transaction: Transaction}) => {
-    const lineCount = transaction.doc.childCount;
+  const textChangeCallback = useEvent((index: number, newVal: string) => {
+    const tempList = [...transcriptList];
+    tempList[index].text = newVal;
 
-    const step = transaction.steps[0] as ReplaceStep;
-
-    const newArr: string[] = [];
-    transaction.doc.content.forEach((c) => newArr.push(c.textContent));
-
-    // First, compare lines. If theyre the same, were going to assume for now a minor change occurred  (THIS IS NOT ALWAYS TRUE, CHEATING)
-    if (lineCount === editedList.length) {
-      setEditedList(editedList.map((item, i) => ({ ...item, text: newArr[i] })));
-    } else if (step.from !== step.to) {
-      // find first changed line. This line should be longer, and the next one shouldnt exist.
-      const firstEditedIndex = editedList.findIndex((l, i) => l.text !== newArr[i]);
-
-      const newEditedList = structuredClone(editedList);
-      newEditedList[firstEditedIndex].text = newArr[firstEditedIndex];
-      newEditedList[firstEditedIndex].transcriptMappingEnd = newEditedList[firstEditedIndex + 1].transcriptMappingEnd;
-
-      newEditedList.splice(firstEditedIndex + 1, 1);
-
-      newEditedList.filter((l) => l.transcriptMappingStart === newEditedList[firstEditedIndex].transcriptMappingStart).forEach((l) => { l.transcriptMappingEnd = newEditedList[firstEditedIndex].transcriptMappingEnd; });
-
-      setEditedList(newEditedList);
-    // ASSUMING WE JUST HIT ENTER, AND DID NOTHING ELSE. NOT SAFE.
-    } else {
-      // find first changed line. This line should be shorter, and we will assume the next one is new
-      const firstEditedIndex = editedList.findIndex((l, i) => l.text !== newArr[i]);
-
-      const newEditedList = structuredClone(editedList);
-      newEditedList[firstEditedIndex].text = newArr[firstEditedIndex];
-
-      const editedItem = newEditedList[firstEditedIndex];
-
-      newEditedList.splice(firstEditedIndex + 1, 0, { transcriptMappingEnd: editedItem.transcriptMappingEnd, transcriptMappingStart: editedItem.transcriptMappingStart, text: newArr[firstEditedIndex + 1] });
-
-      setEditedList(newEditedList);
-    }
+    setTranscriptList(tempList);
   });
 
-  useEffect(() => {
-    const lines: {start: number, end: number, lineStart: number, lineEnd: number}[] = [];
+  const addTagCallback = useEvent((index: number, newTags: Tag[]) => {
+    const tempList = [...transcriptList];
+    tempList[index].selectedTags = newTags;
 
-    editedList.forEach((l, i) => {
-      if (transcription && (i === 0 || l.transcriptMappingStart !== editedList[i - 1].transcriptMappingStart)) {
+    setTranscriptList(tempList);
+  });
+
+  // special logic for when I hit backspace at the start of one of the text boxes. Delete that row, move the text to the one above it, copy up the tags, accounting for duplicates
+  const deleteRowCallback = useEvent((index) => {
+    if (index === 0) {
+      return;
+    }
+
+    const newEditedList = structuredClone(transcriptList);
+    newEditedList[index - 1].text = transcriptList[index - 1].text + transcriptList[index].text;
+    newEditedList[index - 1].transcriptMappingEnd = transcriptList[index].transcriptMappingEnd;
+    newEditedList[index - 1].selectedTags = [...transcriptList[index - 1].selectedTags, ...transcriptList[index].selectedTags.filter((tag) => !transcriptList[index - 1].selectedTags.find((prevTags) => prevTags.name === tag.name))];
+
+    newEditedList.splice(index, 1);
+
+    newEditedList.filter((l) => l.transcriptMappingStart === newEditedList[index - 1].transcriptMappingStart).forEach((l) => { l.transcriptMappingEnd = newEditedList[index - 1].transcriptMappingEnd; });
+
+    setTranscriptList(newEditedList);
+
+    setTimeout(() => {
+      textRefs.current[index - 1].focus();
+      textRefs.current[index - 1].setSelectionRange(transcriptList[index - 1].text.length, transcriptList[index - 1].text.length, 'none');
+    });
+  });
+
+  // Special logic for when i hit enter in any of the text boxes. Create a new row below, moving text after the enter into the new row, and copy the tags into the new row
+  const addRowCallback = useEvent((index, textIndex) => {
+    const newEditedList = structuredClone(transcriptList);
+    const editedItem = newEditedList[index];
+
+    newEditedList.splice(index + 1, 0, {
+      transcriptMappingEnd: editedItem.transcriptMappingEnd, transcriptMappingStart: editedItem.transcriptMappingStart, text: editedItem.text.slice(textIndex), selectedTags: editedItem.selectedTags,
+    });
+
+    newEditedList[index].text = newEditedList[index].text.slice(0, textIndex);
+
+    setTranscriptList(newEditedList);
+
+    setTimeout(() => {
+      textRefs.current[index + 1].focus();
+      textRefs.current[index + 1].setSelectionRange(0, 0);
+    });
+  });
+
+  // Create a separate object, transcriptLines, with additional time information so that I can create the actual lines under the waveform.
+  useEffect(() => {
+    const lines:TranscriptLinesWithTimes[] = [];
+
+    transcriptList.forEach((l, i) => {
+      if (transcription && (i === 0 || l.transcriptMappingStart !== transcriptList[i - 1].transcriptMappingStart)) {
         lines.push({
-          start: i === 0 ? 0 : transcription.results[l.transcriptMappingStart - 1].resultEndTime as number, end: transcription.results[l.transcriptMappingEnd].resultEndTime as number, lineStart: l.transcriptMappingStart, lineEnd: l.transcriptMappingEnd,
+          start: i === 0 ? 0 : transcription.results[l.transcriptMappingStart - 1].resultEndTime as number,
+          end: transcription.results[l.transcriptMappingEnd].resultEndTime as number,
+          lineStart: l.transcriptMappingStart,
+          lineEnd: l.transcriptMappingEnd,
+          tags: transcriptList.filter((t) => t.transcriptMappingStart === l.transcriptMappingStart && t.transcriptMappingEnd === l.transcriptMappingEnd).map((t) => t.selectedTags),
         });
       }
     });
 
     setTranscriptLines(lines);
-  }, [editedList, setTranscriptLines, transcription]);
-
-  const cursor = useRef<number>();
-
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Superscript,
-      SubScript,
-      ReactComponent,
-      // SpanParagraph,
-      TiptapHighlight.Highlight.configure({
-        multicolor: true,
-      }),
-      TextAlign.configure({ types: ['heading', 'paragraph'] }),
-    ],
-    parseOptions: {
-      preserveWhitespace: 'full',
-    },
-    content: textContent,
-    editable: true,
-    onUpdate: textChangeCallback,
-    onSelectionUpdate: ({ editor: ed }) => {
-      cursor.current = ed.state.selection.anchor;
-    },
-  }, []);
-
-  useEffect(() => {
-    if (editor) {
-      editor
-        .chain()
-        .setContent(textContent, false, { preserveWhitespace: 'full' })
-        .setTextSelection(cursor.current || 0)
-        .run();
-    }
-  }, [textContent, editor]);
-
-  useEffect(() => {
-    if (editedList && editedList.length > 0) {
-      setTextContent(editedList.map((s) => (`<react-component start='${s.transcriptMappingStart}' end='${s.transcriptMappingEnd}' current='${currentShownTranscription === null ? 0 : currentShownTranscription}'><p>${s.text}</p></react-component>`)).join(''));
-    }
-    // Want to not actually change this when text gets typed, because it causes problems in the editor. But this is also annoying when you jump to a next currentShown.
-  }, [currentShownTranscription, editedList, transcription]);
+  }, [transcriptList, setTranscriptLines, transcription]);
 
   // Get transcription, and merge all of the transcriptions into one, correcting for time problems.
   useEffect(() => {
@@ -156,11 +125,17 @@ export function TextEditor({
 
         setTranscription({ results: newTranscription });
 
-        setEditedList(newTranscription.map((t, i) => ({ transcriptMappingStart: i, transcriptMappingEnd: i, text: t.alternatives[0].transcript?.trim() || '' })));
+        setTranscriptList(newTranscription.map((t, i) => ({
+          transcriptMappingStart: i, transcriptMappingEnd: i, text: t.alternatives[0].transcript?.trim() || '', selectedTags: [],
+        })));
+
+        setCurrentShownTranscription(0);
       });
     }
-  }, [storageEngine, studyId, trrackId, config.tasksToNotRecordAudio, participant, trialFilter, setEditedList]);
+  }, [storageEngine, studyId, trrackId, config.tasksToNotRecordAudio, participant, trialFilter, setTranscriptList, setCurrentShownTranscription]);
 
+  // Update the current transcription based on the playTime.
+  // TODO:: this is super unperformant, but I don't have a solution atm. think about it harder
   useEffect(() => {
     if (transcription && currentShownTranscription !== null && participant && playTime > 0) {
       let tempCurrentShownTranscription = currentShownTranscription;
@@ -189,19 +164,40 @@ export function TextEditor({
     }
   }, [currentShownTranscription, participant, playTime, setCurrentShownTranscription, transcription, trialFilter]);
 
-  return textContent.length > 0 ? (
-    <RichTextEditor
-      editor={editor}
-      styles={{
-        content: {
-          mark: {
-            backgroundColor: 'transparent',
-            color: 'cornflowerblue',
-          },
-        },
-      }}
-    >
-      <RichTextEditor.Content />
-    </RichTextEditor>
-  ) : null;
+  return (
+    <Stack spacing={0}>
+      <Group mb="xl" position="apart" noWrap>
+        <Text style={{ flexGrow: 1, textAlign: 'center' }}>Transcript</Text>
+        <Popover>
+          <Popover.Target>
+            <Group position="center" style={{ width: '380px', cursor: 'pointer' }}>
+              <IconPlus />
+              <Text>Tags</Text>
+
+            </Group>
+          </Popover.Target>
+          <Popover.Dropdown>
+            <TagEditor createTagCallback={(t: Tag) => { setTags([...tags, t]); }} tags={tags} />
+          </Popover.Dropdown>
+        </Popover>
+      </Group>
+      {transcriptList.map((line, i) => (
+        <IconComponent
+          addRef={(ref) => { textRefs.current[i] = ref; }}
+          onSelectTags={(newTags: Tag[]) => addTagCallback(i, newTags)}
+          addRowCallback={(textIndex) => addRowCallback(i, textIndex)}
+          deleteRowCallback={() => deleteRowCallback(i)}
+          onTextChange={((val) => textChangeCallback(i, val))}
+          tags={tags}
+          selectedTags={line.selectedTags}
+          addTag={(t: Tag) => { setTags([...tags, t]); addTagCallback(i, [...line.selectedTags, t]); }}
+          text={line.text}
+          key={i}
+          start={line.transcriptMappingStart}
+          end={line.transcriptMappingEnd}
+          current={currentShownTranscription === null ? 0 : currentShownTranscription}
+        />
+      ))}
+    </Stack>
+  );
 }

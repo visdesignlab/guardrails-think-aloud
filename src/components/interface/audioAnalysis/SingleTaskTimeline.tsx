@@ -1,9 +1,11 @@
 import {
   useCallback, useEffect, useMemo, useState,
 } from 'react';
+import { isRootNode } from '@trrack/core';
 import * as d3 from 'd3';
 import { Stack } from '@mantine/core';
 import { useNavigate, useParams } from 'react-router';
+import { current } from '@reduxjs/toolkit';
 import { ParticipantData } from '../../../storage/types';
 import { SingleTaskProvenance } from './SingleTaskProvenance';
 
@@ -15,27 +17,52 @@ export function SingleTaskTimeline({
 } : {xScale: d3.ScaleLinear<number, number>, participantData: ParticipantData, width: number, height: number, currentNode: string | null, setCurrentNode: (node: string) => void, isPlaying: boolean, setIsPlaying: (b: boolean) => void, playTime: number, setPlayTime: (n: number, p: number) => void, setSelectedTask: (s: string) => void}) {
   const totalLength = useMemo(() => xScale.domain()[1] - xScale.domain()[0], [xScale]);
 
-  const { trialName } = useParams();
-  // useEffect(() => {
-  //   if (isPlaying && playTime <= xScale.domain()[1]) {
-  //     if (playTime + xScale.domain()[0] > allTaskTimes[taskIndex + 1].time) {
-  //       setTaskIndex(taskIndex + 1);
-  //       setSelectedTask(allTaskTimes[taskIndex + 1].name);
-  //       setProvNodeIndex(0);
-  //     } else if (playTime + xScale.domain()[0] > allTaskTimes[taskIndex]?.nodes[provNodeIndex + 1]?.time) {
-  //       setProvNodeIndex(provNodeIndex + 1);
-  //       setCurrentNode(allTaskTimes[taskIndex].nodes[provNodeIndex + 1].name);
-  //     }
-  //   }
-  // }, [allTaskTimes, isPlaying, playTime, provNodeIndex, setCurrentNode, setSelectedTask, taskIndex, xScale]);
+  const { trialFilter: trialName } = useParams();
 
-  // useEffect(() => {
-  //   setPlayTime(xScale.domain()[0], (xScale.domain()[0] - wholeXScale.domain()[0]) / totalLength);
-  // }, [selectedTask, setPlayTime, totalLength, wholeXScale, xScale]);
+  useEffect(() => {
+    if (!trialName || !participantData) {
+      return;
+    }
+    const provGraph = participantData.answers[trialName].provenanceGraph;
 
-  // useEffect(() => {
-  //   setTaskIndex(allTaskTimes.indexOf(allTaskTimes.find((task) => task.name === selectedTask)!));
-  // }, [selectedTask, allTaskTimes]);
+    if (!provGraph) {
+      return;
+    }
+
+    const { startTime } = participantData.answers.introduction;
+
+    const actualTime = startTime + playTime;
+
+    if (!currentNode || !provGraph.nodes[currentNode]) {
+      setCurrentNode(provGraph.root as string);
+      return;
+    }
+
+    let tempNode = provGraph.nodes[currentNode];
+
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      if (actualTime < tempNode.createdOn) {
+        if (!isRootNode(tempNode)) {
+          const parentNode = tempNode.parent;
+
+          if (actualTime < provGraph.nodes[parentNode].createdOn) {
+            tempNode = provGraph.nodes[parentNode];
+          } else break;
+        } else break;
+      } else if (tempNode.children.length > 0) {
+        const child = tempNode.children[0];
+
+        if (actualTime > provGraph.nodes[child].createdOn) {
+          tempNode = provGraph.nodes[child];
+        } else break;
+      } else break;
+    }
+
+    if (tempNode.id !== currentNode) {
+      setCurrentNode(tempNode.id);
+    }
+  }, [currentNode, participantData, playTime, setCurrentNode, trialName]);
 
   const currentNodeCallback = useCallback((node: string, nodeTime: number, taskName: string) => {
     setPlayTime(nodeTime, (nodeTime - xScale.domain()[0]) / totalLength);
@@ -43,21 +70,18 @@ export function SingleTaskTimeline({
     setCurrentNode(node);
   }, [setCurrentNode, setPlayTime, totalLength, xScale]);
 
+  const circles = useMemo(() => Object.entries(participantData.answers).filter((entry) => (trialName ? trialName === entry[0] : true)).map((entry) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [name, answer] = entry;
+
+    return <SingleTaskProvenance key={name} taskName={name} answer={answer} height={height} currentNode={currentNode} setCurrentNode={currentNodeCallback} xScale={xScale} />;
+  }), [currentNode, currentNodeCallback, height, participantData.answers, trialName, xScale]);
+
   return (
     <Stack>
       <svg style={{ width, height }}>
         <line stroke="black" strokeWidth={1} x1={margin.left} x2={width + margin.left} y1={height / 2} y2={height / 2} />
-        {/* {selectedTask ? <line stroke="cornflowerblue" strokeWidth={1} opacity={1} x1={margin.left} x2={wholeXScale(participantData.answers[selectedTask].startTime)} y1={height / 2} y2={0}></line> : null } */}
-        {/* {selectedTask ? <AnimatedPath d={`M 0,${height/2} C 0,0 ${wholeXScale(participantData.answers[selectedTask].startTime)},${height/4} ${wholeXScale(participantData.answers[selectedTask].startTime)},0`}></AnimatedPath> : null }
-            {selectedTask ? <AnimatedPath d={`M ${width},${height/2} C ${width},0 ${wholeXScale(participantData.answers[selectedTask].endTime)},${height/4} ${wholeXScale(participantData.answers[selectedTask].endTime)},0`}></AnimatedPath> : null } */}
-        {/* {selectedTask ? <line stroke="cornflowerblue" strokeWidth={1} opacity={1} x1={margin.left + width} x2={wholeXScale(participantData.answers[selectedTask].endTime)} y1={height / 2} y2={0}></line> : null } */}
-
-        {Object.entries(participantData.answers).map((entry) => {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const [name, answer] = entry;
-
-          return <SingleTaskProvenance key={name} taskName={name} answer={answer} height={height} currentNode={currentNode} setCurrentNode={currentNodeCallback} xScale={xScale} />;
-        })}
+        {circles}
 
       </svg>
     </Stack>

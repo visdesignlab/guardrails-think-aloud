@@ -12,3 +12,18 @@ export interface Tag {
     color: string,
     name: string
 }
+
+export interface EditedText {
+    transcriptMappingStart: number;
+    transcriptMappingEnd: number;
+    text: string;
+    selectedTags: Tag[];
+  }
+
+export interface TranscriptLinesWithTimes {
+    start: number,
+    end: number,
+    lineStart: number,
+    lineEnd: number,
+    tags: Tag[][]
+}

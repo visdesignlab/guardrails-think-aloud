@@ -27,6 +27,7 @@ import { useEvent } from '../../../store/hooks/useEvent';
 import { useStoreActions, useStoreDispatch, useStoreSelector } from '../../../store/store';
 import { TranscriptLines } from './TransciptLines';
 import { TextEditor } from './TextEditor';
+import { EditedText, TranscriptLinesWithTimes } from './types';
 
 const margin = {
   left: 5, top: 0, right: 5, bottom: 0,
@@ -110,7 +111,7 @@ export function AnalysisPopout() {
   const storeDispatch = useStoreDispatch();
 
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [playTime, setPlayTime] = useThrottledState<number>(0, 200);
+  const [playTime, setPlayTime] = useThrottledState<number>(0, 50);
 
   const waveSurferDiv = useRef(null);
 
@@ -126,7 +127,9 @@ export function AnalysisPopout() {
 
   const trrackForTrial = useRef<Trrack<object, string> | null>(null);
 
-  const [transcriptLines, setTranscriptLines] = useState<{start: number, end: number, lineStart: number, lineEnd: number}[]>([]);
+  const [transcriptLines, setTranscriptLines] = useState<TranscriptLinesWithTimes[]>([]);
+
+  const [transcriptList, setTranscriptList] = useState<EditedText[]>([]);
 
   const allPartIds = useMemo(() => [...inPersonIds, ...prolificIds], []);
   // Create an instance of trrack to ensure getState works, incase the saved state is not a full state node.
@@ -235,13 +238,12 @@ export function AnalysisPopout() {
   }, [handleWSMount, participant, wavesurfer]);
 
   const _setPlayTime = useCallback((n: number, percent: number) => {
-    const startTime = participant ? participant.answers.audioTest.startTime : null;
     setPlayTime(n);
 
     if (wavesurfer && percent) {
-      wavesurfer?.setTime(startTime ? (n - startTime) / 1000 : 0);
+      wavesurfer?.seekTo(percent);
     }
-  }, [participant, setPlayTime, wavesurfer]);
+  }, [setPlayTime, wavesurfer]);
 
   const _setIsPlaying = useCallback((b: boolean) => {
     setIsPlaying(b);
@@ -259,6 +261,7 @@ export function AnalysisPopout() {
     if (!participant) {
       return null;
     }
+
     const allStartTimes = Object.values(participant.answers || {}).map((answer) => [answer.startTime, answer.endTime]).flat();
 
     const extent = d3.extent(allStartTimes) as [number, number];
@@ -290,7 +293,12 @@ export function AnalysisPopout() {
             <ActionIcon>
               <IconArrowLeft onClick={() => nextParticipantCallback(false)} />
             </ActionIcon>
-            <Select style={{ width: '300px' }} value={participant?.participantId} data={[...inPersonIds, ...prolificIds]} />
+            <Select
+              style={{ width: '300px' }}
+              value={participant?.participantId}
+              onChange={(e) => navigate(`../../${trialFilter ? '../' : ''}${e}/ui/${trialFilter || ''}`, { relative: 'path' })}
+              data={[...inPersonIds, ...prolificIds]}
+            />
             <Select
               style={{ width: '300px' }}
               clearable
@@ -304,7 +312,6 @@ export function AnalysisPopout() {
           </Group>
         </Center>
         {status === 'success' && participant && xScale ? <AllTasksTimeline trialFilter={trialFilter} xScale={xScale} setSelectedTask={setSelectedTask} participantData={participant} width={width} height={200} /> : <Center style={{ height: '275px' }}><Loader /></Center>}
-        {status === 'success' && participant && xScale ? <SingleTaskTimeline xScale={xScale} setSelectedTask={setSelectedTask} playTime={playTime - participant.answers.introduction.startTime} setPlayTime={_setPlayTime} isPlaying={isPlaying} setIsPlaying={_setIsPlaying} currentNode={currentNode} setCurrentNode={_setCurrentNode} participantData={participant} width={width} height={50} /> : null}
         { xScale && participant !== null
           ? (
             <>
@@ -324,6 +331,7 @@ export function AnalysisPopout() {
               <TranscriptLines startTime={trialFilter ? xScale.domain()[0] : participant.answers.audioTest.startTime} xScale={xScale} transcriptLines={transcriptLines} currentShownTranscription={currentShownTranscription} />
             </>
           ) : null }
+        {status === 'success' && participant && xScale ? <SingleTaskTimeline xScale={xScale} setSelectedTask={setSelectedTask} playTime={playTime - participant.answers.introduction.startTime} setPlayTime={_setPlayTime} isPlaying={isPlaying} setIsPlaying={_setIsPlaying} currentNode={currentNode} setCurrentNode={_setCurrentNode} participantData={participant} width={width} height={50} /> : null}
 
         {/* <Group style={{ width: '100%', height: '100px' }} align="center" position="center">
           <Center>
@@ -337,7 +345,7 @@ export function AnalysisPopout() {
         </Group>
 
         <Stack>
-          {participant ? <TextEditor setCurrentShownTranscription={setCurrentShownTranscription} currentShownTranscription={currentShownTranscription} participant={participant} playTime={playTime} setTranscriptLines={setTranscriptLines as any} /> : null}
+          {participant ? <TextEditor transcriptList={transcriptList} setTranscriptList={setTranscriptList} setCurrentShownTranscription={setCurrentShownTranscription} currentShownTranscription={currentShownTranscription} participant={participant} playTime={playTime} setTranscriptLines={setTranscriptLines as any} /> : null}
         </Stack>
       </Stack>
     </Group>

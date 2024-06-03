@@ -1,7 +1,5 @@
 import { mergeAttributes, Node } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
-
-import Paragraph from '@tiptap/extension-paragraph';
 import { IconComponent } from './IconComponent';
 
 export default Node.create({
