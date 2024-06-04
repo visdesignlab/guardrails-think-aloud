@@ -10,6 +10,7 @@ import { useResizeObserver } from '@mantine/hooks';
 import * as d3 from 'd3';
 import { AllTasksTimeline } from './AllTasksTimeline';
 import { ParticipantData } from '../../../storage/types';
+import { getSequenceFlatMap } from '../../../utils/getSequenceFlatMap';
 
 const margin = {
   left: 5, top: 0, right: 5, bottom: 0,
@@ -76,7 +77,7 @@ export function AnalysisSingleParticipant({ participant, maxDuration } : {partic
             component={Link}
             target="_blank"
             to={`${current.pathname}/${participant.participantId}/ui`}
-            onClick={() => navigate(`${participant.participantId}/${participant.sequence[0]}`)}
+            onClick={() => navigate(`${participant.participantId}/${getSequenceFlatMap(participant.sequence)[0]}`)}
           >
             {participant.participantId}
           </Anchor>

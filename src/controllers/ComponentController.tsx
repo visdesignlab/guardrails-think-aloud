@@ -1,19 +1,24 @@
 import { Suspense, useEffect, useState } from 'react';
 import merge from 'lodash.merge';
 import { useNavigate, useParams } from 'react-router-dom';
-import ResponseBlock from '../components/response/ResponseBlock';
 import IframeController from './IframeController';
 import ImageController from './ImageController';
 import ReactComponentController from './ReactComponentController';
 import MarkdownController from './MarkdownController';
 import { useStudyConfig } from '../store/hooks/useStudyConfig';
+import { useCurrentStep } from '../routes/utils';
 import { useStoredAnswer } from '../store/hooks/useStoredAnswer';
 import ReactMarkdownWrapper from '../components/ReactMarkdownWrapper';
 import { isInheritedComponent } from '../parser/parser';
 import { IndividualComponent } from '../parser/types';
-import { disableBrowserBack } from '../utils/disableBrowserBack';
-import { useStorageEngine } from '../store/storageEngineHooks';
-import { useStoreActions, useStoreDispatch, useStoreSelector } from '../store/store';
+import {
+  useStoreActions, useStoreDispatch, useStoreSelector, useFlatSequence,
+} from '../store/store';
+import { useDisableBrowserBack } from '../utils/useDisableBrowserBack';
+import { useStorageEngine } from '../storage/storageEngineHooks';
+import { StudyEnd } from '../components/StudyEnd';
+import TrialNotFound from '../Trial404';
+import ResponseBlock from '../components/response/ResponseBlock';
 
 // current active stimuli presented to the user
 export default function ComponentController({ provState } : {provState?: unknown}) {
@@ -21,9 +26,9 @@ export default function ComponentController({ provState } : {provState?: unknown
   const studyConfig = useStudyConfig();
   const storage = useStorageEngine();
 
-  const { trialName: currentStep } = useParams();
-
-  const stepConfig = studyConfig.components[currentStep!];
+  const currentStep = useCurrentStep();
+  const currentComponent = useFlatSequence()[currentStep] || 'Notfound';
+  const stepConfig = studyConfig.components[currentComponent];
 
   // If we have a trial, use that config to render the right component else use the step
   const status = useStoredAnswer();
@@ -44,14 +49,14 @@ export default function ComponentController({ provState } : {provState?: unknown
   const [prevTrialName, setPrevTrialName] = useState<string | null>(null);
 
   useEffect(() => {
-    dispatch(setAnalysisTrialName(currentStep!));
-  }, [dispatch, setAnalysisTrialName, currentStep]);
+    dispatch(setAnalysisTrialName(currentComponent!));
+  }, [dispatch, setAnalysisTrialName, currentStep, currentComponent]);
 
   useEffect(() => {
-    if (currentStep && analysisTrialName && currentStep !== analysisTrialName) {
+    if (currentStep && analysisTrialName && currentComponent !== analysisTrialName) {
       navigate(`../${analysisTrialName}`);
     }
-  }, [analysisTrialName, currentStep, navigate]);
+  }, [analysisTrialName, currentComponent, currentStep, navigate]);
 
   useEffect(() => {
     if (!currentStep || !studyConfig || !studyConfig.recordStudyAudio || !storage.storageEngine) {
@@ -62,7 +67,7 @@ export default function ComponentController({ provState } : {provState?: unknown
       storage.storageEngine.saveAudio(audioStream, prevTrialName);
     }
 
-    if (studyConfig.tasksToNotRecordAudio && studyConfig.tasksToNotRecordAudio.includes(currentStep)) {
+    if (studyConfig.tasksToNotRecordAudio && studyConfig.tasksToNotRecordAudio.includes(currentComponent)) {
       setPrevTrialName(null);
       setAudioStream(null);
       dispatch(setIsRecording(false));
@@ -78,7 +83,7 @@ export default function ComponentController({ provState } : {provState?: unknown
         setAudioStream(mediaRecorder);
         dispatch(setIsRecording(true));
       });
-      setPrevTrialName(currentStep);
+      setPrevTrialName(currentComponent);
     }
 
     // return () => {
@@ -88,10 +93,10 @@ export default function ComponentController({ provState } : {provState?: unknown
     //     });
     //   }
     // };
-  }, [currentStep]);
+  }, [currentComponent]);
 
   // Disable browser back button from all stimuli
-  disableBrowserBack();
+  useDisableBrowserBack();
 
   // Check if we have issues connecting to the database, if so show alert modal
   const { storageEngine } = useStorageEngine();
@@ -105,6 +110,16 @@ export default function ComponentController({ provState } : {provState?: unknown
       }));
     }
   }, [setAlertModal, storageEngine, storeDispatch]);
+
+  // We're not using hooks below here, so we can return early if we're at the end of the study.
+  // This avoids issues with the component config being undefined for the end of the study.
+  if (currentComponent === 'end') {
+    return <StudyEnd />;
+  }
+
+  if (currentComponent === 'Notfound') {
+    return <TrialNotFound email={studyConfig.uiConfig.contactEmail} />;
+  }
 
   return (
     <>

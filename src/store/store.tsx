@@ -6,24 +6,29 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import { createStateSyncMiddleware, initMessageListener, initStateWithPrevTab } from 'redux-state-sync';
 import { ResponseBlockLocation, StudyConfig } from '../parser/types';
 import {
-  StoredAnswer, TrialValidation, TrrackedProvenance, StoreState,
+  StoredAnswer, TrialValidation, TrrackedProvenance, StoreState, Sequence, ParticipantMetadata,
 } from './types';
+import { getSequenceFlatMap } from '../utils/getSequenceFlatMap';
 
 export async function studyStoreCreator(
   studyId: string,
   config: StudyConfig,
-  sequence: string[],
+  sequence: Sequence,
+  metadata: ParticipantMetadata,
   answers: Record<string, StoredAnswer>,
+  isAdmin: boolean,
 ) {
-  const emptyAnswers = { ...sequence.map((id) => ({ [id]: {} })) };
+  const flatSequence = getSequenceFlatMap(sequence);
+
+  const emptyAnswers = { ...flatSequence.map((id) => ({ [id]: {} })) };
   const emptyValidation: TrialValidation = Object.assign(
     {},
-    ...sequence.map((id) => ({ [id]: { aboveStimulus: { valid: false, values: {} }, belowStimulus: { valid: false, values: {} }, sidebar: { valid: false, values: {} } } })),
+    ...flatSequence.map((id, idx) => ({ [`${id}_${idx}`]: { aboveStimulus: { valid: false, values: {} }, belowStimulus: { valid: false, values: {} }, sidebar: { valid: false, values: {} } } })),
   );
   const allValid = Object.assign(
     {},
-    ...sequence.map((id) => ({
-      [id]: {
+    ...flatSequence.map((id, idx) => ({
+      [`${id}_${idx}`]: {
         aboveStimulus: true, belowStimulus: true, sidebar: true, values: {},
       },
     })),
@@ -35,11 +40,13 @@ export async function studyStoreCreator(
     isRecording: false,
     sequence,
     config,
-    showAdmin: false,
+    showStudyBrowser: import.meta.env.VITE_REVISIT_MODE === 'public' || isAdmin,
     showHelpText: false,
     alertModal: { show: false, message: '' },
     trialValidation: answers ? allValid : emptyValidation,
-    iframeAnswers: [] as string[],
+    iframeAnswers: {},
+    iframeProvenance: null,
+    metadata,
     analysisTrialName: null,
     analysisProvState: null,
   };
@@ -54,8 +61,8 @@ export async function studyStoreCreator(
       setIsRecording(state, payload: PayloadAction<boolean>) {
         state.isRecording = payload.payload;
       },
-      toggleShowAdmin: (state) => {
-        state.showAdmin = !state.showAdmin;
+      toggleStudyBrowser: (state) => {
+        state.showStudyBrowser = !state.showStudyBrowser;
       },
       toggleShowHelpText: (state) => {
         state.showHelpText = !state.showHelpText;
@@ -63,11 +70,14 @@ export async function studyStoreCreator(
       setAlertModal: (state, action: PayloadAction<{ show: boolean; message: string }>) => {
         state.alertModal = action.payload;
       },
-      setIframeAnswers: (state, action: PayloadAction<string[]>) => {
+      setIframeAnswers: (state, action: PayloadAction<Record<string, unknown>>) => {
         state.iframeAnswers = action.payload;
       },
       setAnalysisTrialName: (state, action: PayloadAction<string | null>) => {
         state.analysisTrialName = action.payload;
+      },
+      setIframeProvenance: (state, action: PayloadAction<TrrackedProvenance | null>) => {
+        state.iframeProvenance = action.payload;
       },
       updateResponseBlockValidation: (
         state,
@@ -75,26 +85,24 @@ export async function studyStoreCreator(
           payload,
         }: PayloadAction<{
           location: ResponseBlockLocation;
-          currentStep: string | undefined;
+          identifier: string;
           status: boolean;
           values: object;
           provenanceGraph?: TrrackedProvenance;
         }>,
       ) => {
-        if (!payload.currentStep || payload.currentStep.length === 0) return;
-
-        if (!state.trialValidation[payload.currentStep]) {
-          state.trialValidation[payload.currentStep] = {
+        if (!state.trialValidation[payload.identifier]) {
+          state.trialValidation[payload.identifier] = {
             aboveStimulus: { valid: false, values: {} },
             belowStimulus: { valid: false, values: {} },
             sidebar: { valid: false, values: {} },
             provenanceGraph: undefined,
           };
         }
-        state.trialValidation[payload.currentStep][payload.location] = { valid: payload.status, values: payload.values };
+        state.trialValidation[payload.identifier][payload.location] = { valid: payload.status, values: payload.values };
 
         if (payload.provenanceGraph) {
-          state.trialValidation[payload.currentStep].provenanceGraph = payload.provenanceGraph;
+          state.trialValidation[payload.identifier].provenanceGraph = payload.provenanceGraph;
         }
       },
       saveAnalysisState(state, { payload } : PayloadAction<unknown>) {
@@ -104,13 +112,12 @@ export async function studyStoreCreator(
         state,
         {
           payload,
-        }: PayloadAction<{ currentStep: string } & StoredAnswer>,
+        }: PayloadAction<{ identifier: string } & StoredAnswer>,
       ) {
         const {
-          currentStep, answer, startTime, endTime, provenanceGraph, windowEvents,
+          identifier, answer, startTime, endTime, provenanceGraph, windowEvents,
         } = payload;
-
-        state.answers[currentStep] = {
+        state.answers[identifier] = {
           answer,
           startTime,
           endTime,
@@ -150,10 +157,8 @@ type StoreDispatch = StudyStore['store']['dispatch'];
 export const useStoreDispatch: () => StoreDispatch = useDispatch;
 export const useStoreSelector: TypedUseSelectorHook<StoreState> = useSelector;
 
-export function useAreResponsesValid(id?: string) {
+export function useAreResponsesValid(id: string) {
   return useStoreSelector((state) => {
-    if (id === undefined || id.length === 0) return true;
-
     const valid = Object.values(state.trialValidation[id]).every((x) => {
       if (typeof x === 'object' && 'valid' in x) {
         return x.valid;
@@ -165,4 +170,8 @@ export function useAreResponsesValid(id?: string) {
 
     return Object.values(valid).every((x) => x);
   });
+}
+
+export function useFlatSequence(): string[] {
+  return useStoreSelector((state) => getSequenceFlatMap(state.sequence));
 }

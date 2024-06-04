@@ -1,4 +1,5 @@
 {
+    "$schema": "https://typedoc.org/schema.json",
     "entryPoints": [
         "src/parser/types.ts"
     ],
@@ -6,12 +7,18 @@
         "typedoc-plugin-markdown",
         "typedoc-plugin-frontmatter"
     ],
-    "name": "",
+    "name": "Modules",
     "githubPages": false,
-    "readme": "none",
-    "entryDocument": "index.md",
+    "readme": "typedocReadMe.md",
+    "entryFileName": "index.md",
     "hideBreadcrumbs": true,
     "frontmatterGlobals": {
-      "layout": "docs",
-    }
+      "sidebar_position": 1,
+      "displayed_sidebar": "docs"
+    },
+    "textContentMappings": {
+        "title.memberPage": "{name}"
+    },
+    "hidePageHeader": true,
+    "propertiesFormat": "table"
 }

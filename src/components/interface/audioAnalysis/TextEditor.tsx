@@ -9,13 +9,14 @@ import {
 import { IconPlus } from '@tabler/icons-react';
 import { ParticipantData } from '../../../storage/types';
 import { useStudyConfig } from '../../../store/hooks/useStudyConfig';
-import { useStorageEngine } from '../../../store/storageEngineHooks';
 import { useEvent } from '../../../store/hooks/useEvent';
 import {
   EditedText, Tag, TranscribedAudio, TranscriptLinesWithTimes,
 } from './types';
 import { IconComponent } from './tiptapExtensions/IconComponent';
 import { TagEditor } from './TextEditorComponents/TagEditor';
+import { useStorageEngine } from '../../../storage/storageEngineHooks';
+import { getSequenceFlatMap } from '../../../utils/getSequenceFlatMap';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function TextEditor({
@@ -111,7 +112,7 @@ export function TextEditor({
   // Get transcription, and merge all of the transcriptions into one, correcting for time problems.
   useEffect(() => {
     if (studyId && trrackId && participant) {
-      storageEngine?.getTranscription(participant.sequence.filter((seq) => config.tasksToNotRecordAudio === undefined || !config.tasksToNotRecordAudio.includes(seq)).filter((seq) => (trialFilter ? seq === trialFilter : true)), trrackId).then((data) => {
+      storageEngine?.getTranscription(getSequenceFlatMap(participant.sequence).filter((seq) => config.tasksToNotRecordAudio === undefined || !config.tasksToNotRecordAudio.includes(seq)).filter((seq) => (trialFilter ? seq === trialFilter : true)), trrackId).then((data) => {
         const fullTranscription = data.map((d) => JSON.parse(d) as TranscribedAudio);
         let taskEndTime = 0;
 

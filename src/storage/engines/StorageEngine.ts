@@ -1,7 +1,28 @@
+import { User } from '@firebase/auth';
 import { EditedText } from '../../components/interface/audioAnalysis/types';
 import { StudyConfig } from '../../parser/types';
-import { StoredAnswer } from '../../store/types';
+import { ParticipantMetadata, Sequence, StoredAnswer } from '../../store/types';
 import { ParticipantData } from '../types';
+
+export interface StoredUser {
+  email: string,
+  uid: string | null,
+}
+
+export interface LocalStorageUser {
+  name: string,
+  email: string,
+  uid: string,
+}
+
+export type UserOptions = User | LocalStorageUser | null;
+
+export interface UserWrapped {
+  user: UserOptions,
+  determiningStatus: boolean,
+  isAdmin: boolean,
+  adminVerification:boolean
+}
 
 export abstract class StorageEngine {
   protected engine: string;
@@ -26,35 +47,43 @@ export abstract class StorageEngine {
 
   abstract initializeStudyDb(studyId: string, config: StudyConfig): Promise<void>;
 
-  abstract initializeParticipantSession(searchParams: Record<string, string>, config: StudyConfig, urlParticipantId?: string): Promise<ParticipantData>;
+  abstract initializeParticipantSession(searchParams: Record<string, string>, config: StudyConfig, metadata: ParticipantMetadata, urlParticipantId?: string): Promise<ParticipantData>;
+
+  abstract getCurrentConfigHash(): Promise<string>;
 
   abstract getCurrentParticipantId(urlParticipantId?: string): Promise<string>;
 
   abstract clearCurrentParticipantId(): Promise<void>;
 
-  abstract saveAnswer(currentStep: string, answer: StoredAnswer): Promise<void>;
+  abstract saveAnswer(identifier: string, answer: StoredAnswer): Promise<void>;
 
   abstract saveEditedTranscript(participantId: string, transcript: EditedText[]): Promise<void>;
 
   abstract getEditedTranscript(participantId: string): Promise<EditedText[]>;
 
-  abstract setSequenceArray(latinSquare: string[][]): Promise<void>;
-
-  abstract getSequenceArray(participantId?: string): Promise<string[][] | null>;
-
-  abstract getSequence(participantId?: string): Promise<string[]>;
-
-  abstract getAllParticipantsData(): Promise<ParticipantData[]>;
-
-  abstract getParticipantData(participantId?: string): Promise<ParticipantData | null>;
-
   abstract getAudio(taskList: string[], participantId?: string): Promise<string[]>;
 
   abstract getTranscription(taskList: string[], participantId?: string): Promise<string[]>;
 
-  abstract nextParticipant(config: StudyConfig): Promise<ParticipantData>;
+  abstract setSequenceArray(latinSquare: Sequence[]): Promise<void>;
+
+  abstract getSequenceArray(): Promise<Sequence[] | null>;
+
+  abstract getSequence(): Promise<Sequence>;
+
+  abstract getAllParticipantsData(): Promise<ParticipantData[]>;
+
+  abstract getAllParticipantsDataByStudy(studyId:string): Promise<ParticipantData[]>;
+
+  abstract getParticipantData(participantId?: string): Promise<ParticipantData | null>;
+
+  abstract nextParticipant(config: StudyConfig, metadata: ParticipantMetadata): Promise<ParticipantData>;
 
   abstract saveAudio(audioStream: MediaRecorder, taskName: string): Promise<void>;
 
   abstract verifyCompletion(answers: Record<string, StoredAnswer>): Promise<boolean>;
+
+  abstract validateUser(user: UserWrapped | null): Promise<boolean>;
+
+  abstract rejectParticipant(studyId: string, participantID: string): Promise<void>;
 }

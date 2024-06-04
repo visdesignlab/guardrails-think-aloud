@@ -3,10 +3,10 @@
 import { Loader, Stack } from '@mantine/core';
 import * as d3 from 'd3';
 import { useMemo } from 'react';
-import { useStorageEngine } from '../../../store/storageEngineHooks';
 import { useAsync } from '../../../store/hooks/useAsync';
 import { StorageEngine } from '../../../storage/engines/StorageEngine';
 import { AnalysisSingleParticipant } from './AnalysisSingleParticipant';
+import { useStorageEngine } from '../../../storage/storageEngineHooks';
 
 function getParticipantData(storageEngine: StorageEngine | undefined) {
   if (storageEngine) {

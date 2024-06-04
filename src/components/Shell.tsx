@@ -7,14 +7,14 @@ import { Provider } from 'react-redux';
 import {
   RouteObject, useLocation, useMatch, useParams, useRoutes, useSearchParams,
 } from 'react-router-dom';
-import { Box, Center, Loader } from '@mantine/core';
-import { parseStudyConfig } from '../parser/parser';
+import { LoadingOverlay, Title } from '@mantine/core';
+import { ErrorObject } from 'ajv';
 import {
   GlobalConfig,
   Nullable,
   StudyConfig,
 } from '../parser/types';
-import { StudyIdParam } from '../routes';
+import { useStudyId } from '../routes/utils';
 import {
   StudyStoreContext,
   StudyStore,
@@ -30,32 +30,31 @@ import { NavigateWithParams } from '../utils/NavigateWithParams';
 import { StudyEnd } from './StudyEnd';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion
-import { useStorageEngine } from '../store/storageEngineHooks';
 import { generateSequenceArray } from '../utils/handleRandomSequences';
 import { StepRenderer } from './StepRenderer';
 import { ProvenanceWrapper } from './interface/audioAnalysis/ProvenanceWrapper';
 import { StorageEngine } from '../storage/engines/StorageEngine';
 import { AnalysisHome } from './interface/audioAnalysis/AnalysisHome';
-import { PREFIX } from './Prefix';
 import { Analysis } from './interface/audioAnalysis/Analysis';
+import { parseStudyConfig } from '../parser/parser';
+import { PREFIX } from '../utils/Prefix';
+import StudyNotFound from '../Study404';
+import { useAuth } from '../store/hooks/useAuth';
+import { getStudyConfig } from '../utils/fetchConfig';
+import { useStorageEngine } from '../storage/storageEngineHooks';
+import { ParticipantMetadata } from '../store/types';
+import { ErrorLoadingConfig } from './ErrorLoadingConfig';
 
 async function fetchStudyConfig(configLocation: string, configKey: string) {
   const config = await (await fetch(`${PREFIX}${configLocation}`)).text();
   return parseStudyConfig(config, configKey);
 }
 
-export function GenerateStudiesRoutes({ studyId, config, storage }: {
+export function GenerateStudiesRoutes({ studyId, config }: {
   studyId: Nullable<string>,
-  config: Nullable<StudyConfig>,
-  storage: StorageEngine}) {
-  const sequence = useStoreSelector((state) => state.sequence);
-
-  // useEffect(() => {
-  //   if (atEnd && config && config.recordStudyAudio && audioStream) {
-  //     storage.saveAudio(audioStream);
-  //     dispatch(setIsRecording(false));
-  //   }
-  // }, [config, atEnd, audioStream, dispatch, setIsRecording, storage]);
+  config: Nullable<StudyConfig & { errors?: ErrorObject<string, Record<string, unknown>, unknown>[] }>
+  }) {
+  const { sequence } = useStoreSelector((state) => state);
 
   const routes = useMemo(() => {
     if (studyId && config && sequence) {
@@ -63,7 +62,17 @@ export function GenerateStudiesRoutes({ studyId, config, storage }: {
 
       stepRoutes.push({
         path: '/',
-        element: <NavigateWithParams to={`${sequence[0]}`} replace />,
+        element: <NavigateWithParams to="0" replace />,
+      });
+
+      stepRoutes.push({
+        path: '/:index',
+        element: config.errors ? (
+          <>
+            <Title order={2} mb={8}>Error loading config</Title>
+            <ErrorLoadingConfig errors={config.errors} />
+          </>
+        ) : <ComponentController />,
       });
 
       stepRoutes.push({
@@ -108,22 +117,16 @@ export function Shell({ globalConfig }: {
   globalConfig: GlobalConfig;
 }) {
   // Pull study config
-  const { studyId } = useParams<StudyIdParam>();
-  if (!studyId || !globalConfig.configsList.find((c) => sanitizeStringForUrl(c))) {
-    throw new Error('Study id invalid');
-  }
-  const [activeConfig, setActiveConfig] = useState<Nullable<StudyConfig>>(null);
-  useEffect(() => {
-    const configKey = globalConfig.configsList.find(
-      (c) => sanitizeStringForUrl(c) === studyId,
-    );
+  const studyId = useStudyId();
+  const [activeConfig, setActiveConfig] = useState<Nullable<StudyConfig & { errors?: ErrorObject<string, Record<string, unknown>, unknown>[] }>>(null);
+  const isValidStudyId = globalConfig.configsList.find((c) => sanitizeStringForUrl(c) === studyId);
 
-    if (configKey) {
-      const configJSON = globalConfig.configs[configKey];
-      fetchStudyConfig(`${configJSON.path}`, configKey).then((config) => {
-        setActiveConfig(config);
-      });
-    }
+  const auth = useAuth();
+
+  useEffect(() => {
+    getStudyConfig(studyId, globalConfig).then((config) => {
+      setActiveConfig(config);
+    });
   }, [globalConfig, studyId]);
 
   const [store, setStore] = useState<Nullable<StudyStore>>(null);
@@ -144,27 +147,44 @@ export function Shell({ globalConfig }: {
       // Get or generate participant session
       const urlParticipantId = activeConfig.uiConfig.urlParticipantIdParam ? searchParams.get(activeConfig.uiConfig.urlParticipantIdParam) || undefined : undefined;
       const searchParamsObject = Object.fromEntries(searchParams.entries());
-      const participantSession = await storageEngine.initializeParticipantSession(searchParamsObject, activeConfig, urlParticipantId);
+
+      const ipRes = await fetch('https://api.ipify.org?format=json').catch((_) => '');
+      const ip: { ip: string } = ipRes instanceof Response ? await ipRes.json() : { ip: '' };
+
+      const metadata: ParticipantMetadata = {
+        language: navigator.language,
+        userAgent: navigator.userAgent,
+        resolution: {
+          width: window.screen.width, height: window.screen.height, availHeight: window.screen.availHeight, availWidth: window.screen.availWidth, colorDepth: window.screen.colorDepth, orientation: window.screen.orientation.type, pixelDepth: window.screen.pixelDepth,
+        },
+        ip: ip.ip,
+      };
+
+      const participantSession = await storageEngine.initializeParticipantSession(searchParamsObject, activeConfig, metadata, urlParticipantId);
 
       // Initialize the redux stores
-      const _store = await studyStoreCreator(studyId, activeConfig, participantSession.sequence, participantSession.answers);
-      setStore(_store);
+      const newStore = await studyStoreCreator(studyId, activeConfig, participantSession.sequence, metadata, participantSession.answers, auth.user.isAdmin);
+      setStore(newStore);
     }
     initializeUserStoreRouting();
-  }, [storageEngine, activeConfig, studyId, searchParams]);
+  }, [storageEngine, activeConfig, studyId, searchParams, auth.user.isAdmin]);
 
-  return !store || !storageEngine
-    ? (
-      <Box style={{ height: '100vh' }}>
-        <Center style={{ height: '100%' }}>
-          <Loader style={{ height: '100%' }} size={60} />
-        </Center>
-      </Box>
-    ) : (
+  // const routing = useRoutes(routes);
+
+  const loaderOrRouting = !store ? <LoadingOverlay visible />
+    : (
       <StudyStoreContext.Provider value={store}>
         <Provider store={store.store}>
-          <GenerateStudiesRoutes studyId={studyId} config={activeConfig} storage={storageEngine} />
+          <GenerateStudiesRoutes studyId={studyId} config={activeConfig} />
         </Provider>
       </StudyStoreContext.Provider>
     );
+
+  return (
+    isValidStudyId ? (
+      loaderOrRouting
+    ) : (
+      <StudyNotFound />
+    )
+  );
 }

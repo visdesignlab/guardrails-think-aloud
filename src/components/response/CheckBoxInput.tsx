@@ -18,22 +18,19 @@ export default function CheckBoxInput({
 
   return (
     <Checkbox.Group
-      label={<ReactMarkdownWrapper text={prompt} />}
-      withAsterisk={required}
+      label={<ReactMarkdownWrapper text={prompt} required={required} />}
       {...answer}
       error={generateErrorMessage(response, answer, options)}
       size="md"
     >
-      <Group mt="md">
-        {options.map((option) => (
-          <Checkbox
-            key={option.value}
-            disabled={disabled}
-            value={option.value}
-            label={option.label}
-          />
-        ))}
-      </Group>
+      {options.map((option) => (
+        <Checkbox
+          key={option.value}
+          disabled={disabled}
+          value={option.value}
+          label={option.label}
+        />
+      ))}
     </Checkbox.Group>
   );
 }

@@ -1,8 +1,10 @@
 import {
   ActionIcon,
+  Badge,
   Button,
   Flex,
   Grid,
+  Group,
   Header,
   Image,
   Menu,
@@ -10,8 +12,8 @@ import {
   Space,
   Title,
   Text,
-  Group,
   Box,
+  Tooltip,
 } from '@mantine/core';
 import {
   IconDotsVertical,
@@ -26,40 +28,41 @@ import { useHref } from 'react-router-dom';
 import { WaveForm, WaveSurfer } from 'wavesurfer-react';
 import WaveSurferRef from 'wavesurfer.js';
 import RecordPlugin from 'wavesurfer.js/dist/plugins/record';
-import { useCurrentStep, useStudyId } from '../../routes';
-import { useStoreDispatch, useStoreSelector, useStoreActions } from '../../store/store';
-import { useStorageEngine } from '../../store/storageEngineHooks';
-import { PREFIX } from '../Prefix';
 import RecordingAudioWaveform from './RecordingAudioWaveform';
+import {
+  useStoreDispatch, useStoreSelector, useStoreActions, useFlatSequence,
+} from '../../store/store';
+import { useStorageEngine } from '../../storage/storageEngineHooks';
+import { PREFIX } from '../../utils/Prefix';
+import { useAuth } from '../../store/hooks/useAuth';
+import { useCurrentStep, useStudyId } from '../../routes/utils';
 
 export default function AppHeader() {
-  const { config: studyConfig, sequence: order } = useStoreSelector((state) => state);
+  const { config: studyConfig, metadata } = useStoreSelector((state) => state);
+  const flatSequence = useFlatSequence();
   const storeDispatch = useStoreDispatch();
-  const { toggleShowHelpText, toggleShowAdmin } = useStoreActions();
+  const { toggleShowHelpText, toggleStudyBrowser } = useStoreActions();
   const { storageEngine } = useStorageEngine();
 
   const isRecording = useStoreSelector((store) => store.isRecording);
 
   const currentStep = useCurrentStep();
 
-  const progressBarCurrent = studyConfig !== null
-    ? order.indexOf(currentStep)
-    : 0;
-  const progressBarMax = order.length - 1;
-  const progressPercent = (progressBarCurrent / progressBarMax) * 100;
+  const auth = useAuth();
+
+  const progressBarMax = flatSequence.length - 1;
+  const progressPercent = (currentStep / progressBarMax) * 100;
 
   const [menuOpened, setMenuOpened] = useState(false);
 
   const logoPath = studyConfig?.uiConfig.logoPath;
   const withProgressBar = studyConfig?.uiConfig.withProgressBar;
 
-  const [searchParams] = useState(new URLSearchParams(window.location.search));
-  const admin = searchParams.get('admin') || 'f';
-
   const studyId = useStudyId();
   const studyHref = useHref(`/${studyId}`);
+
   function getNewParticipant() {
-    storageEngine?.nextParticipant(studyConfig)
+    storageEngine?.nextParticipant(studyConfig, metadata)
       .then(() => {
         window.location.href = studyHref;
       })
@@ -67,6 +70,16 @@ export default function AppHeader() {
         console.error(err);
       });
   }
+
+  const titleRef = useRef<HTMLHeadingElement | null>(null);
+  const [isTruncated, setIsTruncated] = useState(false);
+
+  useEffect(() => {
+    const element = titleRef.current;
+    if (element) {
+      setIsTruncated(element.scrollWidth > element.offsetWidth);
+    }
+  }, [studyConfig]);
 
   return (
     <Header height="70" p="md">
@@ -92,7 +105,8 @@ export default function AppHeader() {
         </Grid.Col>
 
         <Grid.Col span={4}>
-          <Flex align="center" justify="flex-end">
+          <Group noWrap position="right">
+            {import.meta.env.VITE_REVISIT_MODE === 'public' ? <Tooltip multiline withArrow arrowSize={6} width={300} label="This is a demo version of the study, we’re not collecting any data. Navigate the study via the study browser on the right."><Badge size="lg" color="orange">Demo Mode</Badge></Tooltip> : null}
             {studyConfig?.uiConfig.helpTextPath !== undefined && (
               <Button
                 variant="outline"
@@ -102,9 +116,7 @@ export default function AppHeader() {
               </Button>
             )}
 
-            <Space w="md" />
-
-            {(import.meta.env.DEV || admin === 't') && (
+            {(import.meta.env.DEV || import.meta.env.VITE_REVISIT_MODE === 'public' || auth.user.isAdmin) && (
               <Menu
                 shadow="md"
                 width={200}
@@ -113,16 +125,16 @@ export default function AppHeader() {
                 onChange={setMenuOpened}
               >
                 <Menu.Target>
-                  <ActionIcon size="lg">
+                  <ActionIcon size="lg" className="studyBrowserMenuDropdown">
                     <IconDotsVertical />
                   </ActionIcon>
                 </Menu.Target>
                 <Menu.Dropdown>
                   <Menu.Item
                     icon={<IconSchema size={14} />}
-                    onClick={() => storeDispatch(toggleShowAdmin())}
+                    onClick={() => storeDispatch(toggleStudyBrowser())}
                   >
-                    Admin Mode
+                    Study Browser
                   </Menu.Item>
 
                   <Menu.Item
@@ -146,7 +158,7 @@ export default function AppHeader() {
                 </Menu.Dropdown>
               </Menu>
             )}
-          </Flex>
+          </Group>
         </Grid.Col>
       </Grid>
     </Header>

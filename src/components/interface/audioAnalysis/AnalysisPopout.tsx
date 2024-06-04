@@ -16,7 +16,6 @@ import { Registry, Trrack, initializeTrrack } from '@trrack/core';
 import WaveSurfer from 'wavesurfer.js';
 import { IconArrowLeft, IconArrowRight } from '@tabler/icons-react';
 import { useThrottledState } from 'mantine-v7';
-import { useStorageEngine } from '../../../store/storageEngineHooks';
 import { useAsync } from '../../../store/hooks/useAsync';
 import { StorageEngine } from '../../../storage/engines/StorageEngine';
 import { AllTasksTimeline } from './AllTasksTimeline';
@@ -28,6 +27,8 @@ import { useStoreActions, useStoreDispatch, useStoreSelector } from '../../../st
 import { TranscriptLines } from './TransciptLines';
 import { TextEditor } from './TextEditor';
 import { EditedText, TranscriptLinesWithTimes } from './types';
+import { useStorageEngine } from '../../../storage/storageEngineHooks';
+import { getSequenceFlatMap } from '../../../utils/getSequenceFlatMap';
 
 const margin = {
   left: 5, top: 0, right: 5, bottom: 0,
@@ -196,7 +197,8 @@ export function AnalysisPopout() {
   const timeUpdate = useEvent((t: number) => {
     // check if were on the next task. If so, navigate to the next task
     if (participant && trialName && (participant.answers[trialName].endTime - participant.answers.audioTest.startTime) / 1000 < t) {
-      setSelectedTask(participant.sequence[participant.sequence.indexOf(trialName) + 1]);
+      const seq = getSequenceFlatMap(participant.sequence);
+      setSelectedTask(seq[seq.indexOf(trialName) + 1]);
     } else if (participant && trialName && trrackForTrial.current && trrackForTrial.current.current.children.length > 0 && (trrackForTrial.current.graph.backend.nodes[trrackForTrial.current.current.children[0]].createdOn - participant.answers.audioTest.startTime) / 1000 < t) {
       _setCurrentNode(trrackForTrial.current.current.children[0]);
     }
@@ -212,7 +214,7 @@ export function AnalysisPopout() {
       if (waveSurfer && participant && trrackId) {
         const crunker = new Crunker();
 
-        storageEngine?.getAudio(participant.sequence.filter((seq) => config.tasksToNotRecordAudio === undefined || !config.tasksToNotRecordAudio.includes(seq)).filter((seq) => (trialFilter ? seq === trialFilter : true)), trrackId).then((urls) => {
+        storageEngine?.getAudio(getSequenceFlatMap(participant.sequence).filter((seq) => config.tasksToNotRecordAudio === undefined || !config.tasksToNotRecordAudio.includes(seq)).filter((seq) => (trialFilter ? seq === trialFilter : true)), trrackId).then((urls) => {
           if (waveSurfer) {
             crunker
               .fetchAudio(...urls)
@@ -303,7 +305,7 @@ export function AnalysisPopout() {
               style={{ width: '300px' }}
               clearable
               value={trialFilter}
-              data={participant ? [...participant.sequence] : []}
+              data={participant ? [...getSequenceFlatMap(participant.sequence)] : []}
               onChange={(val) => navigate(`${trialFilter ? '../' : ''}${val || ''}`, { relative: 'path' })}
             />
             <ActionIcon>

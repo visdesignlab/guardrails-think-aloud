@@ -2,19 +2,21 @@ import {
   Button, Center, Group, Text,
 } from '@mantine/core';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   IndividualComponent,
   ResponseBlockLocation,
 } from '../../parser/types';
-import { useCurrentStep } from '../../routes';
-import { useStoreDispatch, useStoreSelector, useStoreActions } from '../../store/store';
+import { useCurrentStep } from '../../routes/utils';
+import {
+  useStoreDispatch, useStoreSelector, useStoreActions, useFlatSequence,
+} from '../../store/store';
 
 import { deepCopy } from '../../utils/deepCopy';
 import { NextButton } from '../NextButton';
 import { useAnswerField } from './utils';
 import ResponseSwitcher from './ResponseSwitcher';
-import { StoredAnswer } from '../../store/types';
+import { StoredAnswer, TrrackedProvenance } from '../../store/types';
 
 type Props = {
   status?: StoredAnswer;
@@ -30,39 +32,50 @@ export default function ResponseBlock({
   style,
 }: Props) {
   const currentStep = useCurrentStep();
+  const currentComponent = useFlatSequence()[currentStep];
   const storedAnswer = status?.answer;
 
   const configInUse = config as IndividualComponent;
 
-  const responses = configInUse?.response?.filter((r) => (r.location ? r.location === location : location === 'belowStimulus')) || [];
+  const responses = useMemo(() => configInUse?.response?.filter((r) => (r.location ? r.location === location : location === 'belowStimulus')) || [], [configInUse?.response, location]);
 
   const storeDispatch = useStoreDispatch();
   const { updateResponseBlockValidation } = useStoreActions();
   const answerValidator = useAnswerField(responses, currentStep, storedAnswer || {});
+  const [provenanceGraph, setProvenanceGraph] = useState<TrrackedProvenance | undefined>(undefined);
   const [checkClicked, setCheckClicked] = useState(false);
-  const { iframeAnswers } = useStoreSelector((state) => state);
-  const hasCorrectAnswer = ((configInUse?.correctAnswer?.length || 0) > 0);
+  const { iframeAnswers, iframeProvenance } = useStoreSelector((state) => state);
+  const hasCorrectAnswerFeedback = configInUse?.provideFeedback && ((configInUse?.correctAnswer?.length || 0) > 0);
 
   const showNextBtn = location === (configInUse?.nextButtonLocation || 'belowStimulus');
 
   useEffect(() => {
     const iframeResponse = responses.find((r) => r.type === 'iframe');
-    if (iframeResponse) {
+    if (iframeAnswers && iframeResponse) {
       const answerId = iframeResponse.id;
-      answerValidator.setValues({ ...answerValidator.values, [answerId]: iframeAnswers });
+      answerValidator.setValues({ ...answerValidator.values, [answerId]: iframeAnswers[answerId] });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [iframeAnswers]);
+
+  useEffect(() => {
+    if (iframeProvenance) {
+      setProvenanceGraph(iframeProvenance);
+    }
+  }, [iframeProvenance]);
 
   useEffect(() => {
     storeDispatch(
       updateResponseBlockValidation({
         location,
-        currentStep,
+        identifier: `${currentComponent}_${currentStep}`,
         status: answerValidator.isValid(),
         values: deepCopy(answerValidator.values),
+        provenanceGraph,
       }),
     );
-  }, [answerValidator.values, currentStep, location]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answerValidator.values, currentComponent, currentStep, location, storeDispatch, updateResponseBlockValidation, provenanceGraph]);
 
   return (
     <div style={style}>
@@ -81,7 +94,7 @@ export default function ResponseBlock({
                 }}
                 response={response}
               />
-              {hasCorrectAnswer && checkClicked && (
+              {hasCorrectAnswerFeedback && checkClicked && (
                 <Text>
                   {`The correct answer is: ${configInUse.correctAnswer?.find((answer) => answer.id === response.id)?.answer}`}
                 </Text>
@@ -91,8 +104,8 @@ export default function ResponseBlock({
         </React.Fragment>
       ))}
 
-      <Group position="center" spacing="xs" mt="xl">
-        {hasCorrectAnswer && showNextBtn && (
+      <Group position="right" spacing="xs" mt="xl">
+        {hasCorrectAnswerFeedback && showNextBtn && (
           <Button
             onClick={() => setCheckClicked(true)}
             disabled={!answerValidator.isValid()}
@@ -101,13 +114,11 @@ export default function ResponseBlock({
           </Button>
         )}
         {showNextBtn && (
-          <Center>
-            <NextButton
-              disabled={hasCorrectAnswer && !checkClicked}
-              setCheckClicked={setCheckClicked}
-              label={configInUse.nextButtonText || 'Next'}
-            />
-          </Center>
+          <NextButton
+            disabled={hasCorrectAnswerFeedback && !checkClicked}
+            setCheckClicked={setCheckClicked}
+            label={configInUse.nextButtonText || 'Next'}
+          />
         )}
       </Group>
     </div>

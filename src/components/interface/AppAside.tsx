@@ -1,46 +1,59 @@
 import {
   Aside,
+  CloseButton,
   ScrollArea,
   Text,
 } from '@mantine/core';
 import React, { useMemo } from 'react';
-import { DownloadPanel } from '../DownloadPanel';
-import { StepsPanel } from './StepsPanel';
+import { ComponentBlockWithOrderPath, StepsPanel } from './StepsPanel';
 import { useStudyConfig } from '../../store/hooks/useStudyConfig';
-import { useStoreSelector } from '../../store/store';
-import { useCurrentStep } from '../../routes';
+import {
+  useFlatSequence, useStoreActions, useStoreDispatch, useStoreSelector,
+} from '../../store/store';
+import { useCurrentStep } from '../../routes/utils';
 import { deepCopy } from '../../utils/deepCopy';
+import { ComponentBlock } from '../../parser/types';
+
+function addPathToComponentBlock(order: ComponentBlock | string, orderPath: string): (ComponentBlock & { orderPath: string }) | string {
+  if (typeof order === 'string') {
+    return order;
+  }
+  return { ...order, orderPath, components: order.components.map((o, i) => addPathToComponentBlock(o, `${orderPath}-${i}`)) };
+}
 
 export default function AppAside() {
-  const { showAdmin, sequence } = useStoreSelector((state) => state);
+  const { showStudyBrowser, sequence } = useStoreSelector((state) => state);
+  const { toggleStudyBrowser } = useStoreActions();
 
   const currentStep = useCurrentStep();
+  const currentComponent = useFlatSequence()[currentStep];
   const studyConfig = useStudyConfig();
+  const dispatch = useStoreDispatch();
 
   const fullOrder = useMemo(() => {
-    const r = deepCopy(studyConfig.sequence);
+    let r = deepCopy(studyConfig.sequence) as ComponentBlockWithOrderPath;
+    r = addPathToComponentBlock(r, 'root') as ComponentBlockWithOrderPath;
     r.components.push('end');
     return r;
   }, [studyConfig.sequence]);
 
-  return showAdmin || (currentStep === 'end' && studyConfig.uiConfig.autoDownloadStudy) ? (
+  return showStudyBrowser || (currentComponent === 'end' && studyConfig.uiConfig.autoDownloadStudy) ? (
     <Aside p="0" width={{ base: 300 }} style={{ zIndex: 0 }}>
-      <ScrollArea p="0">
-        {currentStep === 'end' && (
-          <div
-            style={{ padding: 10, paddingBottom: 15, borderBottom: '1px solid #e9ecef' }}
-          >
-            <Text size="md" p={10} weight="bold">
-              Download
-            </Text>
-            <DownloadPanel studyConfig={studyConfig} />
-          </div>
-        )}
+      <Aside.Section>
+        <CloseButton
+          style={{
+            position: 'absolute', right: '10px', top: '10px', zIndex: 5,
+          }}
+          onClick={() => dispatch(toggleStudyBrowser())}
+        />
         <Text size="md" p={10} weight="bold">
-          Study Sequence
+          Study Browser
         </Text>
-        <StepsPanel order={fullOrder} sequence={sequence} />
-      </ScrollArea>
+      </Aside.Section>
+
+      <Aside.Section grow component={ScrollArea}>
+        <StepsPanel configSequence={fullOrder} participantSequence={sequence} fullSequence={sequence} />
+      </Aside.Section>
     </Aside>
   ) : null;
 }

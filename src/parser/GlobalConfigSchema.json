@@ -10,6 +10,13 @@
           "description": "A required json schema property. This should point to the github link for the version of the schema you would like. See examples for more information",
           "type": "string"
         },
+        "adminUsers": {
+          "description": "A required property listing out the emails of users who require admin access.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "configs": {
           "additionalProperties": {
             "additionalProperties": false,
@@ -18,6 +25,10 @@
               "path": {
                 "description": "The path to the study config file. This should be a relative path from the public folder.",
                 "type": "string"
+              },
+              "test": {
+                "description": "Indicates whether the study is a test study. This is used to hide the study from the landing page.",
+                "type": "boolean"
               }
             },
             "required": [
@@ -39,7 +50,8 @@
       "required": [
         "$schema",
         "configs",
-        "configsList"
+        "configsList",
+        "adminUsers"
       ],
       "type": "object"
     }

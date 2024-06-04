@@ -1,9 +1,9 @@
 import { Suspense, useCallback } from 'react';
 import { ModuleNamespace } from 'vite/types/hot';
 import { ReactComponent } from '../parser/types';
-import { useCurrentStep } from '../routes';
-import { useStoreActions, useStoreDispatch } from '../store/store';
 import { StimulusParams } from '../store/types';
+import { useStoreDispatch, useStoreActions, useFlatSequence } from '../store/store';
+import { useCurrentStep } from '../routes/utils';
 
 const modules = import.meta.glob(
   '../public/**/*.{mjs,js,mts,ts,jsx,tsx}',
@@ -12,6 +12,7 @@ const modules = import.meta.glob(
 
 function ReactComponentController({ currentConfig, provState }: { currentConfig: ReactComponent; provState?: unknown; }) {
   const currentStep = useCurrentStep();
+  const currentComponent = useFlatSequence()[currentStep];
 
   const reactPath = `../public/${currentConfig.path}`;
 
@@ -23,16 +24,14 @@ function ReactComponentController({ currentConfig, provState }: { currentConfig:
   const setAnswer = useCallback(({ status, provenanceGraph, answers }: Parameters<StimulusParams<unknown, unknown>['setAnswer']>[0]) => {
     storeDispatch(updateResponseBlockValidation({
       location: 'sidebar',
-      currentStep,
+      identifier: `${currentComponent}_${currentStep}`,
       status,
       values: answers,
       provenanceGraph,
     }));
 
-    storeDispatch(setIframeAnswers(
-      Object.values(answers).map((value) => value),
-    ));
-  }, [storeDispatch, currentStep]);
+    storeDispatch(setIframeAnswers(answers));
+  }, [storeDispatch, updateResponseBlockValidation, currentComponent, currentStep, setIframeAnswers]);
 
   return (
     <Suspense fallback={<div>Loading...</div>}>

@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   webServer: {
-    command: 'yarn serve',
+    command: 'VITE_CI=true yarn serve',
     url: 'http://localhost:8080',
     reuseExistingServer: !process.env.CI,
     stdout: 'ignore',
@@ -15,7 +15,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   // Opt out of parallel tests on CI.
   workers: process.env.CI ? 1 : undefined,
-  timeout: 90000,
+  timeout: 180000,
   reporter: 'html',
 
   use: {
