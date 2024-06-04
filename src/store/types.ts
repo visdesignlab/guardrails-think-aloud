@@ -18,9 +18,6 @@ export type EventType = MouseMoveEvent | MouseDownEvent | MouseUpEvent | Keypres
 
 export type ValidationStatus = { valid: boolean, values: object }
 
-export type AudioTag = { name: string, icon: string }
-export type TextTag = { text: string, tag: AudioTag }
-
 export type TrialValidation = Record<
   string,
   {

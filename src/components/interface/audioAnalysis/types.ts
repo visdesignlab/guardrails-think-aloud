@@ -18,7 +18,7 @@ export interface EditedText {
     transcriptMappingEnd: number;
     text: string;
     selectedTags: Tag[];
-  }
+}
 
 export interface TranscriptLinesWithTimes {
     start: number,

@@ -1,5 +1,6 @@
+import { EditedText } from '../../components/interface/audioAnalysis/types';
 import { StudyConfig } from '../../parser/types';
-import { AudioTag, StoredAnswer, TextTag } from '../../store/types';
+import { StoredAnswer } from '../../store/types';
 import { ParticipantData } from '../types';
 
 export abstract class StorageEngine {
@@ -33,13 +34,9 @@ export abstract class StorageEngine {
 
   abstract saveAnswer(currentStep: string, answer: StoredAnswer): Promise<void>;
 
-  abstract saveAudioTags(tags: AudioTag[]): Promise<void>;
+  abstract saveEditedTranscript(participantId: string, transcript: EditedText[]): Promise<void>;
 
-  abstract saveTextTags(participantId: string, tags: TextTag[]): Promise<void>;
-
-  abstract getAudioTags(): Promise<AudioTag[]>;
-
-  abstract getTextTags(participantId: string): Promise<TextTag[]>;
+  abstract getEditedTranscript(participantId: string): Promise<EditedText[]>;
 
   abstract setSequenceArray(latinSquare: string[][]): Promise<void>;
 

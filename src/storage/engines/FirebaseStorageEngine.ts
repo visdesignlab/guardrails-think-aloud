@@ -12,12 +12,21 @@ import localforage from 'localforage';
 import { StorageEngine } from './StorageEngine';
 import { ParticipantData } from '../types';
 import {
-  AudioTag, EventType, StoredAnswer, TextTag, TrrackedProvenance,
+  EventType, StoredAnswer, TrrackedProvenance,
 } from '../../store/types';
 import { hash } from './utils';
 import { StudyConfig } from '../../parser/types';
+import { EditedText } from '../../components/interface/audioAnalysis/types';
 
 export class FirebaseStorageEngine extends StorageEngine {
+  saveEditedTranscript(participantId: string, transcript: EditedText[]): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
+  getEditedTranscript(participantId: string): Promise<EditedText[]> {
+    throw new Error('Method not implemented.');
+  }
+
   private RECAPTCHAV3TOKEN = import.meta.env.VITE_RECAPTCHAV3TOKEN;
 
   private firestore: Firestore;
@@ -195,50 +204,6 @@ export class FirebaseStorageEngine extends StorageEngine {
 
     this.localWindowEvents[currentStep] = answer.windowEvents;
     await this._pushToFirebaseStorage(this.currentParticipantId, 'windowEvents', this.localWindowEvents);
-  }
-
-  async saveAudioTags(tags: AudioTag[]) {
-    if (!this._verifyStudyDatabase(this.studyCollection)) {
-      throw new Error('Study database not initialized');
-    }
-
-    // Get the participant doc
-    const tagsDoc = doc(this.studyCollection, 'audioTags');
-
-    await setDoc(tagsDoc, { audioTags: tags });
-  }
-
-  async getAudioTags() {
-    if (this.studyCollection) {
-      const tagDoc = doc(this.studyCollection, 'audioTags');
-      const tags = (await getDoc(tagDoc)).data()?.audioTags as AudioTag[] | null;
-
-      return tags || [];
-    }
-
-    return [];
-  }
-
-  async saveTextTags(participantId: string, tags: TextTag[]) {
-    if (!this._verifyStudyDatabase(this.studyCollection)) {
-      throw new Error('Study database not initialized');
-    }
-
-    // Get the participant doc
-    const tagsDoc = doc(this.studyCollection, participantId);
-
-    await setDoc(tagsDoc, { textTags: tags }, { merge: true });
-  }
-
-  async getTextTags(participantId: string) {
-    if (this.studyCollection) {
-      const tagDoc = doc(this.studyCollection, participantId);
-      const tags = (await getDoc(tagDoc)).data()?.textTags as TextTag[] | null;
-
-      return tags || [];
-    }
-
-    return [];
   }
 
   async saveAudio(

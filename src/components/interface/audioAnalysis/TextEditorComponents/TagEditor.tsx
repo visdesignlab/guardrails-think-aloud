@@ -25,7 +25,7 @@ export function TagEditor({ createTagCallback, tags } : {createTagCallback : (ta
               <IconEdit color="lightgray" />
             </Popover.Target>
             <Popover.Dropdown>
-              <AddTagDropdown editTag currentNames={tags.map((tag) => tag.name)} addTagCallback={(tag: Tag) => { createTagCallback(tag); }} />
+              <AddTagDropdown editTag currentNames={tags.map((tag) => tag.name)} addTagCallback={(tag: Tag) => { createTagCallback(tag); setAddDialogOpen(false); }} />
             </Popover.Dropdown>
           </Popover>
         </Group>
@@ -38,7 +38,7 @@ export function TagEditor({ createTagCallback, tags } : {createTagCallback : (ta
           </Button>
         </Popover.Target>
         <Popover.Dropdown>
-          <AddTagDropdown currentNames={tags.map((t) => t.name)} addTagCallback={(t: Tag) => { setAddDialogOpen(true); createTagCallback(t); }} />
+          <AddTagDropdown currentNames={tags.map((t) => t.name)} addTagCallback={(t: Tag) => { setAddDialogOpen(false); createTagCallback(t); }} />
         </Popover.Dropdown>
       </Popover>
     </Stack>
