@@ -647,10 +647,11 @@ export class FirebaseStorageEngine extends StorageEngine {
     let storageObj: Record<string, T extends 'provenance' ? TrrackedProvenance : T extends 'windowEvents' ? EventType[] : Sequence[]> = {};
     try {
       const url = await getDownloadURL(storageRef);
+
       const response = await fetch(url);
       const fullProvStr = await response.text();
       storageObj = JSON.parse(fullProvStr);
-    } catch {
+    } catch (e) {
       console.warn(`${prefix} does not have ${type} for ${this.studyId}.`);
     }
 

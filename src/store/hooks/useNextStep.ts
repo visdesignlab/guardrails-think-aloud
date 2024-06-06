@@ -10,7 +10,7 @@ import {
 import { useCurrentStep, useStudyId } from '../../routes/utils';
 
 import { deepCopy } from '../../utils/deepCopy';
-import { StoredAnswer, ValidationStatus } from '../types';
+import { Sequence, StoredAnswer, ValidationStatus } from '../types';
 import { useStorageEngine } from '../../storage/storageEngineHooks';
 import { useStoredAnswer } from './useStoredAnswer';
 import { useWindowEvents } from './useWindowEvents';
@@ -114,7 +114,7 @@ export function useNextStep() {
     let nextStep = currentStep + 1;
 
     // Traverse through the sequence to find the block the current component is in
-    const blocksForStep = findBlockForStep(sequence, currentStep);
+    const blocksForStep = findBlockForStep(sequence as Sequence, currentStep);
 
     // If the current component is in a block that has a skip block (or is nested in a block that has a skip block), we need to check if the skip block should be triggered
     const hasSkipBlock = blocksForStep !== null && (blocksForStep.some((block) => Object.hasOwn(block.currentBlock, 'skip') && block.currentBlock.skip !== undefined));
@@ -181,7 +181,7 @@ export function useNextStep() {
 
         if (conditionIsTriggered) {
           const nextStepIndex = participantSequence.indexOf(condition.to);
-          const nextStepBlockIndex = nextStepIndex === -1 ? findIndexOfBlock(sequence, condition.to) : -1;
+          const nextStepBlockIndex = nextStepIndex === -1 ? findIndexOfBlock(sequence as Sequence, condition.to) : -1;
           nextStep = nextStepIndex === -1 ? nextStepBlockIndex : nextStepIndex;
           return true;
         }

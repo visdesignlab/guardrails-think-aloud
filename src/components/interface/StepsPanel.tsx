@@ -173,15 +173,16 @@ export function StepsPanel({
   participantSequence?: Sequence,
 }) {
   // If the participantSequence is provided, reorder the components
-  let components = deepCopy(configSequence.components);
-  if (participantSequence) {
-    const reorderedComponents = reorderComponents(deepCopy(configSequence.components), deepCopy(participantSequence.components));
-    components = reorderedComponents;
-  }
+  // let components = deepCopy(configSequence.components);
+  // if (participantSequence) {
+  //   const reorderedComponents = reorderComponents(deepCopy(configSequence.components), deepCopy(participantSequence.components));
+  //   components = reorderedComponents;
+  // }
 
   return (
     <div>
-      {components.map((step, idx) => {
+      <Text>Hello darkness my old friend</Text>
+      {/* {components.map((step, idx) => {
         if (typeof step === 'string') {
           return (
             <StepItem
@@ -244,7 +245,7 @@ export function StepsPanel({
             </div>
           </NavLink>
         );
-      })}
+      })} */}
     </div>
   );
 }

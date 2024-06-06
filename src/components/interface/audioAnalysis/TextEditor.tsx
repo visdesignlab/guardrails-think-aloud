@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
+  useCallback,
   useEffect, useRef, useState,
 } from 'react';
 import { useParams } from 'react-router-dom';
@@ -165,6 +166,23 @@ export function TextEditor({
     }
   }, [currentShownTranscription, participant, playTime, setCurrentShownTranscription, transcription, trialFilter]);
 
+  const editTagCallback = useCallback((oldTag: Tag, newTag: Tag) => {
+    const tagIndex = tags.findIndex((t) => t.name === oldTag.name);
+    const tagsCopy = Array.from(tags);
+    tagsCopy[tagIndex] = newTag;
+
+    const newTranscriptList = Array.from(transcriptList);
+
+    // loop over and change all tags. Will need to do this smarter once we have it hooked up to firebase
+    newTranscriptList.forEach((t) => {
+      t.selectedTags = t.selectedTags.map((tag) => (tag.name === oldTag.name ? newTag : tag));
+    });
+
+    setTranscriptList(newTranscriptList);
+
+    setTags(tagsCopy);
+  }, [setTranscriptList, tags, transcriptList]);
+
   return (
     <Stack spacing={0}>
       <Group mb="xl" position="apart" noWrap>
@@ -178,7 +196,7 @@ export function TextEditor({
             </Group>
           </Popover.Target>
           <Popover.Dropdown>
-            <TagEditor createTagCallback={(t: Tag) => { setTags([...tags, t]); }} tags={tags} />
+            <TagEditor createTagCallback={(t: Tag) => { setTags([...tags, t]); }} editTagCallback={editTagCallback} tags={tags} />
           </Popover.Dropdown>
         </Popover>
       </Group>

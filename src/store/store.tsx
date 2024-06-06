@@ -13,7 +13,7 @@ import { getSequenceFlatMap } from '../utils/getSequenceFlatMap';
 export async function studyStoreCreator(
   studyId: string,
   config: StudyConfig,
-  sequence: Sequence,
+  sequence: Sequence | string[],
   metadata: ParticipantMetadata,
   answers: Record<string, StoredAnswer>,
   isAdmin: boolean,

@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { from, escape } from 'arquero';
 import ColumnTable from 'arquero/dist/types/table/column-table';
-import { Registry, initializeTrrack, initializeProvenanceGraph } from '@trrack/core';
+import { Registry, initializeTrrack } from '@trrack/core';
 import * as d3 from 'd3';
 import debounce from 'lodash.debounce';
 import { Scatter } from './Scatter';

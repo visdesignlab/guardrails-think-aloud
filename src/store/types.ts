@@ -118,7 +118,7 @@ export interface StoreState {
   studyId: string;
   isRecording: boolean;
   answers: Record<string, StoredAnswer>;
-  sequence: Sequence;
+  sequence: Sequence | string[];
   config: StudyConfig;
   showStudyBrowser: boolean;
   showHelpText: boolean;

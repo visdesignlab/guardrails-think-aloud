@@ -90,40 +90,40 @@ export function AnalysisHome() {
     }));
   }, [allPartsData, status]);
 
-  const totalInteractionsProlific = useMemo(() => {
-    if (!allPartsData) {
-      return 0;
-    }
-    const interactionsCount = allPartsData?.filter((d) => prolificIds.includes(d.participantId)).map((participant) => {
-      if (!participant.answers || Object.entries(participant.answers).length === 0) {
-        return 0;
-      }
+  // const totalInteractionsProlific = useMemo(() => {
+  //   if (!allPartsData) {
+  //     return 0;
+  //   }
+  //   const interactionsCount = allPartsData?.filter((d) => prolificIds.includes(d.participantId)).map((participant) => {
+  //     if (!participant.answers || Object.entries(participant.answers).length === 0) {
+  //       return 0;
+  //     }
 
-      const answersSorted = d3.sum(Object.values(participant.answers).map((a) => (a.provenanceGraph ? Object.keys(a.provenanceGraph.nodes).length : 0)));
+  //     const answersSorted = d3.sum(Object.values(participant.answers).map((a) => (a.provenanceGraph ? Object.keys(a.provenanceGraph.nodes).length : 0)));
 
-      return answersSorted;
-    });
+  //     return answersSorted;
+  //   });
 
-    return d3.median(interactionsCount);
-  }, [allPartsData]);
+  //   return d3.median(interactionsCount);
+  // }, [allPartsData]);
 
-  const totalInteractionsInPerson = useMemo(() => {
-    if (!allPartsData) {
-      return 0;
-    }
+  // const totalInteractionsInPerson = useMemo(() => {
+  //   if (!allPartsData) {
+  //     return 0;
+  //   }
 
-    const interactionsCount = allPartsData?.filter((d) => inPersonIds.includes(d.participantId)).map((participant) => {
-      if (!participant.answers || Object.entries(participant.answers).length === 0) {
-        return 0;
-      }
+  //   const interactionsCount = allPartsData?.filter((d) => inPersonIds.includes(d.participantId)).map((participant) => {
+  //     if (!participant.answers || Object.entries(participant.answers).length === 0) {
+  //       return 0;
+  //     }
 
-      const answersSorted = d3.sum(Object.values(participant.answers).map((a) => (a.provenanceGraph ? Object.keys(a.provenanceGraph.nodes).length : 0)));
+  //     const answersSorted = d3.sum(Object.values(participant.answers).map((a) => (a.provenanceGraph ? Object.keys(a.provenanceGraph.nodes).length : 0)));
 
-      return answersSorted;
-    });
+  //     return answersSorted;
+  //   });
 
-    return d3.median(interactionsCount);
-  }, [allPartsData]);
+  //   return d3.median(interactionsCount);
+  // }, [allPartsData]);
 
   return status === 'success' && allPartsData ? (
     <Stack spacing={50} style={{ width: '100%' }}>

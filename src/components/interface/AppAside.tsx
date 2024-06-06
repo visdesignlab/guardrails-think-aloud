@@ -37,23 +37,25 @@ export default function AppAside() {
     return r;
   }, [studyConfig.sequence]);
 
-  return showStudyBrowser || (currentComponent === 'end' && studyConfig.uiConfig.autoDownloadStudy) ? (
-    <Aside p="0" width={{ base: 300 }} style={{ zIndex: 0 }}>
-      <Aside.Section>
-        <CloseButton
-          style={{
-            position: 'absolute', right: '10px', top: '10px', zIndex: 5,
-          }}
-          onClick={() => dispatch(toggleStudyBrowser())}
-        />
-        <Text size="md" p={10} weight="bold">
-          Study Browser
-        </Text>
-      </Aside.Section>
+  return null;
 
-      <Aside.Section grow component={ScrollArea}>
-        <StepsPanel configSequence={fullOrder} participantSequence={sequence} fullSequence={sequence} />
-      </Aside.Section>
-    </Aside>
-  ) : null;
+  // return showStudyBrowser || (currentComponent === 'end' && studyConfig.uiConfig.autoDownloadStudy) ? (
+  //   <Aside p="0" width={{ base: 300 }} style={{ zIndex: 0 }}>
+  //     <Aside.Section>
+  //       <CloseButton
+  //         style={{
+  //           position: 'absolute', right: '10px', top: '10px', zIndex: 5,
+  //         }}
+  //         onClick={() => dispatch(toggleStudyBrowser())}
+  //       />
+  //       <Text size="md" p={10} weight="bold">
+  //         Study Browser
+  //       </Text>
+  //     </Aside.Section>
+
+  //     <Aside.Section grow component={ScrollArea}>
+  //       <StepsPanel configSequence={fullOrder} participantSequence={sequence} fullSequence={sequence} />
+  //     </Aside.Section>
+  //   </Aside>
+  // ) : null;
 }

@@ -8,7 +8,7 @@ import { IconEdit } from '@tabler/icons-react';
 import { Tag } from '../types';
 import { AddTagDropdown } from '../tiptapExtensions/AddTagDropdown';
 
-export function TagEditor({ createTagCallback, tags } : {createTagCallback : (tag: Tag) => void, tags: Tag[]}) {
+export function TagEditor({ createTagCallback, editTagCallback, tags } : {createTagCallback : (tag: Tag) => void, editTagCallback: (oldTag: Tag, newTag: Tag) => void, tags: Tag[]}) {
   const [addDialogOpen, setAddDialogOpen] = useState<boolean>(false);
 
   return (
@@ -25,7 +25,7 @@ export function TagEditor({ createTagCallback, tags } : {createTagCallback : (ta
               <IconEdit color="lightgray" />
             </Popover.Target>
             <Popover.Dropdown>
-              <AddTagDropdown editTag currentNames={tags.map((tag) => tag.name)} addTagCallback={(tag: Tag) => { createTagCallback(tag); setAddDialogOpen(false); }} />
+              <AddTagDropdown editTag currentNames={tags.map((tag) => tag.name)} addTagCallback={(tag: Tag) => { editTagCallback(t, tag); }} editableTag={t} />
             </Popover.Dropdown>
           </Popover>
         </Group>
