@@ -12,15 +12,15 @@ export function TagEditor({ createTagCallback, editTagCallback, tags } : {create
   const [addDialogOpen, setAddDialogOpen] = useState<boolean>(false);
 
   return (
-    <Stack style={{ width: '300px' }} spacing="xs">
+    <Stack style={{ width: '300px' }} gap="xs">
       {tags.length === 0 ? <Text color="dimmed">No tags found. Create new tags below.</Text> : null}
       {tags.map((t) => (
-        <Group position="apart" key={t.name}>
+        <Group justify="space-between" key={t.name}>
           <Group>
             <ColorSwatch color={t.color} />
             <Text>{t.name}</Text>
           </Group>
-          <Popover trapFocus>
+          <Popover trapFocus withinPortal={false}>
             <Popover.Target>
               <IconEdit color="lightgray" />
             </Popover.Target>
@@ -31,7 +31,7 @@ export function TagEditor({ createTagCallback, editTagCallback, tags } : {create
         </Group>
       ))}
 
-      <Popover trapFocus opened={addDialogOpen}>
+      <Popover trapFocus opened={addDialogOpen} withinPortal={false}>
         <Popover.Target>
           <Button variant="light" onClick={() => setAddDialogOpen(!addDialogOpen)}>
             Create new tag

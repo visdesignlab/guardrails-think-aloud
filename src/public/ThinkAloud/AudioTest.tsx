@@ -70,7 +70,7 @@ export function AudioTest({ parameters, setAnswer }: StimulusParams<BrushParams>
         <Text ta="center">
           Once we can confirm that your microphone is on and we hear you say something, the continue button will become available.
         </Text>
-        <Text ta="center" weight={700}>
+        <Text ta="center" style={{ fontWeight: 700 }}>
           If you are not comfortable or able to speak English during this study, please close it now.
         </Text>
         <Center><RecordingAudioWaveform height={200} width={400} /></Center>

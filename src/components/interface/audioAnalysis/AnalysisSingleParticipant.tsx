@@ -70,10 +70,10 @@ export function AnalysisSingleParticipant({ participant, maxDuration } : {partic
 
   return (
     <Center>
-      <Stack spacing={25} ref={ref} style={{ width: '75%' }} key={participant.participantId}>
-        <Group position="apart">
+      <Stack gap={25} ref={ref} style={{ width: '75%' }} key={participant.participantId}>
+        <Group justify="space-between">
           <Anchor
-            size={25}
+            size="25px"
             component={Link}
             target="_blank"
             to={`${current.pathname}/${participant.participantId}/ui`}

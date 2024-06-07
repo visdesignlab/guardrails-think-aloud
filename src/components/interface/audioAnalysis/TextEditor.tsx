@@ -184,12 +184,12 @@ export function TextEditor({
   }, [setTranscriptList, tags, transcriptList]);
 
   return (
-    <Stack spacing={0}>
-      <Group mb="xl" position="apart" noWrap>
+    <Stack gap={0}>
+      <Group mb="xl" justify="space-between" wrap="nowrap">
         <Text style={{ flexGrow: 1, textAlign: 'center' }}>Transcript</Text>
         <Popover>
           <Popover.Target>
-            <Group position="center" style={{ width: '380px', cursor: 'pointer' }}>
+            <Group justify="center" style={{ width: '300px', cursor: 'pointer' }}>
               <IconPlus />
               <Text>Tags</Text>
 

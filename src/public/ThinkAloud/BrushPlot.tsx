@@ -194,11 +194,11 @@ export function BrushPlot({ parameters, setAnswer, provenanceState }: StimulusPa
   const dataForBars = useMemo(() => filteredTable?.objects() || [], [filteredTable]);
 
   return data ? (
-    <Stack spacing="xs">
+    <Stack gap="xs">
       <Group>
         <Button
           ml={60}
-          compact
+          size="compact-sm"
           style={{ width: '130px' }}
           disabled={brushState.selection.length === 0}
           onClick={() => {
@@ -289,6 +289,7 @@ export function BrushPlot({ parameters, setAnswer, provenanceState }: StimulusPa
                 brushState={(state as BrushState)}
                 isPaintbrushSelect={isPaintbrushSelect}
                 setFilteredTable={filteredCallback}
+                setIsPaintbrushSelect={setIsPaintbrushSelect}
               />
             );
         })}

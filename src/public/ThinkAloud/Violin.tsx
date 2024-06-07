@@ -133,7 +133,7 @@ export function Violin({
   //   histogram.print();
 
   return (
-    <Stack spacing={0}>
+    <Stack gap={0}>
       {/* <Group mr={margin.right} style={{ justifyContent: 'space-between' }}>
         <ActionIcon variant="light" onClick={() => onClose(brushState.id)}><IconX /></ActionIcon>
       </Group> */}

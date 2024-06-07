@@ -7,7 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
-import { useResizeObserver } from '@mantine/hooks';
+import { useResizeObserver, useThrottledState } from '@mantine/hooks';
 import { WaveForm, useWavesurfer } from 'wavesurfer-react';
 import WaveSurferContext from 'wavesurfer-react/dist/contexts/WaveSurferContext';
 import Crunker from 'crunker';
@@ -15,7 +15,6 @@ import * as d3 from 'd3';
 import { Registry, Trrack, initializeTrrack } from '@trrack/core';
 import WaveSurfer from 'wavesurfer.js';
 import { IconArrowLeft, IconArrowRight } from '@tabler/icons-react';
-import { useThrottledState } from 'mantine-v7';
 import { useAsync } from '../../../store/hooks/useAsync';
 import { StorageEngine } from '../../../storage/engines/StorageEngine';
 import { AllTasksTimeline } from './AllTasksTimeline';
@@ -288,8 +287,8 @@ export function AnalysisPopout() {
   }, [allPartIds, navigate, participant, trialFilter]);
 
   return (
-    <Group noWrap spacing={25}>
-      <Stack ref={ref} style={{ width: '100%' }} spacing={25}>
+    <Group wrap="nowrap" gap={25}>
+      <Stack ref={ref} style={{ width: '100%' }} gap={25}>
         <Center>
           <Group>
             <ActionIcon>

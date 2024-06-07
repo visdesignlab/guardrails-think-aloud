@@ -35,6 +35,7 @@ export function Scatter({
   brushedPoints,
   onClose,
   isPaintbrushSelect,
+  setIsPaintbrushSelect,
 }:
 {
   brushedPoints: string[],
@@ -46,6 +47,7 @@ export function Scatter({
   brushType: BrushNames,
   onClose: (id: number) => void
   isPaintbrushSelect: boolean;
+  setIsPaintbrushSelect: (b: boolean) => void
 }) {
   const [ref, { height: originalHeight, width: originalWidth }] = useResizeObserver();
 
@@ -218,17 +220,41 @@ export function Scatter({
   });
 
   return (
-    <Stack spacing={0}>
+    <Stack gap={0}>
       <Group mr={margin.right} style={{ justifyContent: 'space-between' }}>
         {params.year ? (
-          <Stack spacing={0}>
-            <Text size={12} ml={margin.left}>{params.year}</Text>
+          <Stack gap={0}>
+            <Text size="12px" ml={margin.left}>{params.year}</Text>
             <Slider min={2008} max={2022} value={params.year} onChange={sliderChange} ml={margin.left} style={{ width: '150px' }} label={params.year} />
           </Stack>
         ) : null}
         {/* <ActionIcon variant="light" onClick={() => onClose(brushState.id)}><IconX /></ActionIcon> */}
+        <Button
+          ml={60}
+          size="compact-sm"
+          style={{ width: '130px' }}
+          disabled={brushedPoints.length === 0}
+          onClick={() => {
+            setFilteredTable(null);
+            clearCallback?.();
+          }}
+        >
+          Clear Selection
+        </Button>
+        { params.brushType === 'Paintbrush Selection'
+          ? (
+            <SegmentedControl
+              defaultChecked
+              value={isPaintbrushSelect ? 'Select' : 'De-Select'}
+              onChange={(val) => setIsPaintbrushSelect(val === 'Select')}
+              data={[
+                { label: 'Select', value: 'Select' },
+                { label: 'De-Select', value: 'De-Select', disabled: brushedPoints.length === 0 },
+              ]}
+            />
+          ) : null}
       </Group>
-      <Group style={{ width: '100%', height: '100%' }} noWrap>
+      <Group style={{ width: '100%', height: '100%' }} wrap="nowrap">
 
         <svg id="scatterSvgBrushStudy" ref={ref} style={{ height: '500px', width: params.brushType === 'Axis Selection' ? '800px' : '530px', fontFamily: 'BlinkMacSystemFont, -apple-system, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif' }}>
 
@@ -255,8 +281,8 @@ export function Scatter({
         </svg>
         {brushType === 'Slider Selection' && xScale && yScale
           ? (
-            <Stack style={{ flexGrow: 1 }} spacing={50}>
-              <Stack spacing={0}>
+            <Stack style={{ flexGrow: 1 }} gap={50}>
+              <Stack gap={0}>
                 <Text>{params.x}</Text>
                 <RangeSlider
                   minRange={1}
@@ -277,7 +303,7 @@ export function Scatter({
                   value={[xScale.invert(brushState.x1), xScale.invert(brushState.x2)] as any}
                 />
               </Stack>
-              <Stack spacing={0}>
+              <Stack gap={0}>
                 <Text>{params.y}</Text>
                 <RangeSlider
                   minRange={1}

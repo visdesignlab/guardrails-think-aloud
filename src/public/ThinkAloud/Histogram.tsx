@@ -123,7 +123,7 @@ export function Histogram({
   }, [allDataTable, brushState.xCol, dataTable, height, params.hideCat, setSelection, xScale, yScale]);
 
   return yScale && xScale && barsTable ? (
-    <Stack spacing={0}>
+    <Stack gap={0}>
       <svg id="scatterSvgBrushStudy" ref={ref} style={{ height: '500px', width: params.brushType === 'Axis Selection' ? '800px' : '530px', fontFamily: 'BlinkMacSystemFont, -apple-system, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif' }}>
         <XAxisBar
           xScale={xScale}

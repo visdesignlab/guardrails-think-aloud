@@ -25,7 +25,7 @@ export function SingleTask({
       <line stroke="black" strokeWidth={1} x1={xScale(answer.startTime) - LABEL_MARGIN} x2={labelWidth + xScale(answer.startTime) + LABEL_MARGIN} y1={height - TIMELINE_HEIGHT - LABEL_DISTANCE + LABEL_HEIGHT - labelHeight} y2={height - TIMELINE_HEIGHT - LABEL_DISTANCE + LABEL_HEIGHT - labelHeight} />
       <foreignObject x={xScale(answer.startTime)} width={labelWidth} y={height - TIMELINE_HEIGHT - LABEL_DISTANCE - labelHeight} height={LABEL_HEIGHT}>
         <Center style={{ width: 'fit-content' }}>
-          <Text weight={600} lineClamp={1} ref={ref} mx={0} style={{ width: 'fit-content' }} size={12}>{name}</Text>
+          <Text lineClamp={1} ref={ref} mx={0} style={{ width: 'fit-content', fontWeight: 600 }} size="12px">{name}</Text>
         </Center>
       </foreignObject>
     </g>
