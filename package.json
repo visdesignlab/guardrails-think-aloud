@@ -52,7 +52,7 @@
     "d3": "^7.8.2",
     "dayjs": "1.11.10",
     "eslint-config-airbnb": "^19.0.4",
-    "firebase": "^10.7.0",
+    "firebase": "^10.12.2",
     "hjson": "^3.2.2",
     "howler": "^2.2.4",
     "localforage": "^1.10.0",
@@ -82,7 +82,7 @@
     "vega-lite": "^5.17.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.35.1",
+    "@playwright/test": "^1.44.0",
     "@types/d3": "^7.4.0",
     "@types/react": "^18.2.25",
     "@types/react-dom": "^18.0.8",

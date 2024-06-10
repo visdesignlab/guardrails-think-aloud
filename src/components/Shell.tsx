@@ -1,4 +1,5 @@
 import {
+  ReactNode,
   useEffect,
   useMemo,
   useState,
@@ -8,11 +9,10 @@ import {
   RouteObject, useLocation, useMatch, useParams, useRoutes, useSearchParams,
 } from 'react-router-dom';
 import { LoadingOverlay, Title } from '@mantine/core';
-import { ErrorObject } from 'ajv';
 import {
   GlobalConfig,
   Nullable,
-  StudyConfig,
+  ParsedStudyConfig,
 } from '../parser/types';
 import { useStudyId } from '../routes/utils';
 import {
@@ -23,7 +23,6 @@ import {
   useStoreActions,
   useStoreSelector,
 } from '../store/store';
-import { sanitizeStringForUrl } from '../utils/sanitizeStringForUrl';
 
 import ComponentController from '../controllers/ComponentController';
 import { NavigateWithParams } from '../utils/NavigateWithParams';
@@ -38,21 +37,16 @@ import { AnalysisHome } from './interface/audioAnalysis/AnalysisHome';
 import { Analysis } from './interface/audioAnalysis/Analysis';
 import { parseStudyConfig } from '../parser/parser';
 import { PREFIX } from '../utils/Prefix';
-import StudyNotFound from '../Study404';
-import { useAuth } from '../store/hooks/useAuth';
 import { getStudyConfig } from '../utils/fetchConfig';
-import { useStorageEngine } from '../storage/storageEngineHooks';
 import { ParticipantMetadata } from '../store/types';
 import { ErrorLoadingConfig } from './ErrorLoadingConfig';
-
-async function fetchStudyConfig(configLocation: string, configKey: string) {
-  const config = await (await fetch(`${PREFIX}${configLocation}`)).text();
-  return parseStudyConfig(config, configKey);
-}
+import ResourceNotFound from '../ResourceNotFound';
+import { useAuth } from '../store/hooks/useAuth';
+import { useStorageEngine } from '../storage/storageEngineHooks';
 
 export function GenerateStudiesRoutes({ studyId, config }: {
   studyId: Nullable<string>,
-  config: Nullable<StudyConfig & { errors?: ErrorObject<string, Record<string, unknown>, unknown>[] }>
+  config: Nullable<ParsedStudyConfig>
   }) {
   const { sequence } = useStoreSelector((state) => state);
 
@@ -67,10 +61,10 @@ export function GenerateStudiesRoutes({ studyId, config }: {
 
       stepRoutes.push({
         path: '/:index',
-        element: config.errors ? (
+        element: config.errors.length > 0 ? (
           <>
             <Title order={2} mb={8}>Error loading config</Title>
-            <ErrorLoadingConfig errors={config.errors} />
+            <ErrorLoadingConfig issues={config.errors} type="error" />
           </>
         ) : <ComponentController />,
       });
@@ -118,8 +112,8 @@ export function Shell({ globalConfig }: {
 }) {
   // Pull study config
   const studyId = useStudyId();
-  const [activeConfig, setActiveConfig] = useState<Nullable<StudyConfig & { errors?: ErrorObject<string, Record<string, unknown>, unknown>[] }>>(null);
-  const isValidStudyId = globalConfig.configsList.find((c) => sanitizeStringForUrl(c) === studyId);
+  const [activeConfig, setActiveConfig] = useState<ParsedStudyConfig | null>(null);
+  const isValidStudyId = globalConfig.configsList.includes(studyId);
 
   const auth = useAuth();
 
@@ -179,12 +173,22 @@ export function Shell({ globalConfig }: {
         </Provider>
       </StudyStoreContext.Provider>
     );
+  let toRender: ReactNode = null;
 
-  return (
-    isValidStudyId ? (
-      loaderOrRouting
-    ) : (
-      <StudyNotFound />
-    )
-  );
+  // Definitely a 404
+  if (!isValidStudyId) {
+    toRender = <ResourceNotFound />;
+  } else {
+    // If routing is null, we didn't match any routes
+    toRender = loaderOrRouting && store
+      ? (
+        <StudyStoreContext.Provider value={store}>
+          <Provider store={store.store}>
+            {loaderOrRouting}
+          </Provider>
+        </StudyStoreContext.Provider>
+      )
+      : <ResourceNotFound />;
+  }
+  return toRender;
 }

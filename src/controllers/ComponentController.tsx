@@ -3,10 +3,9 @@ import merge from 'lodash.merge';
 import { useNavigate, useParams } from 'react-router-dom';
 import IframeController from './IframeController';
 import ImageController from './ImageController';
-import ReactComponentController from './ReactComponentController';
 import MarkdownController from './MarkdownController';
 import { useStudyConfig } from '../store/hooks/useStudyConfig';
-import { useCurrentStep } from '../routes/utils';
+import { useCurrentComponent, useCurrentStep } from '../routes/utils';
 import { useStoredAnswer } from '../store/hooks/useStoredAnswer';
 import ReactMarkdownWrapper from '../components/ReactMarkdownWrapper';
 import { isInheritedComponent } from '../parser/parser';
@@ -17,8 +16,9 @@ import {
 import { useDisableBrowserBack } from '../utils/useDisableBrowserBack';
 import { useStorageEngine } from '../storage/storageEngineHooks';
 import { StudyEnd } from '../components/StudyEnd';
-import TrialNotFound from '../Trial404';
 import ResponseBlock from '../components/response/ResponseBlock';
+import ResourceNotFound from '../ResourceNotFound';
+import ReactComponentController from './ReactComponentController';
 
 // current active stimuli presented to the user
 export default function ComponentController({ provState } : {provState?: unknown}) {
@@ -27,7 +27,7 @@ export default function ComponentController({ provState } : {provState?: unknown
   const storage = useStorageEngine();
 
   const currentStep = useCurrentStep();
-  const currentComponent = useFlatSequence()[currentStep] || 'Notfound';
+  const currentComponent = useCurrentComponent() || 'Notfound';
   const stepConfig = studyConfig.components[currentComponent];
 
   // If we have a trial, use that config to render the right component else use the step
@@ -103,7 +103,7 @@ export default function ComponentController({ provState } : {provState?: unknown
   const storeDispatch = useStoreDispatch();
   const { setAlertModal } = useStoreActions();
   useEffect(() => {
-    if (storageEngine?.getEngine() !== import.meta.env.VITE_STORAGE_ENGINE) {
+    if (storageEngine?.getEngine() !== import.meta.env.VITE_STORAGE_ENGINE && import.meta.env.VITE_REVISIT_MODE !== 'public') {
       storeDispatch(setAlertModal({
         show: true,
         message: `There was an issue connecting to the ${import.meta.env.VITE_STORAGE_ENGINE} database. This could be caused by a network issue or your adblocker. If you are using an adblocker, please disable it for this website and refresh.`,
@@ -118,7 +118,7 @@ export default function ComponentController({ provState } : {provState?: unknown
   }
 
   if (currentComponent === 'Notfound') {
-    return <TrialNotFound email={studyConfig.uiConfig.contactEmail} />;
+    return <ResourceNotFound email={studyConfig.uiConfig.contactEmail} />;
   }
 
   return (

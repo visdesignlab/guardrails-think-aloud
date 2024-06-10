@@ -55,7 +55,7 @@ export abstract class StorageEngine {
 
   abstract clearCurrentParticipantId(): Promise<void>;
 
-  abstract saveAnswer(identifier: string, answer: StoredAnswer): Promise<void>;
+  abstract saveAnswers(answers: Record<string, StoredAnswer>): Promise<void>;
 
   abstract saveEditedTranscript(participantId: string, transcript: EditedText[]): Promise<void>;
 
