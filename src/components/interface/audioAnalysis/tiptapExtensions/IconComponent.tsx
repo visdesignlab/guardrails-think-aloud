@@ -1,14 +1,17 @@
-import { IconMinusVertical } from '@tabler/icons-react';
+import { IconBallpenFilled, IconMinusVertical } from '@tabler/icons-react';
 import {
-  Text, Divider, Group, TextInput, ColorSwatch, useCombobox, Combobox, Pill, PillsInput, Input,
+  Text, Divider, Group, TextInput, ColorSwatch, useCombobox, Combobox, Pill, PillsInput, Input, Popover, Textarea,
 } from '@mantine/core';
 import * as d3 from 'd3';
+import { useState } from 'react';
 import { Tag } from '../types';
 
 export function IconComponent({
-  start, current, end, text, tags, selectedTags, addTag, onTextChange, deleteRowCallback, addRowCallback, onSelectTags, addRef,
-} : {start: number, end: number, current: number, text: string, tags: Tag[], selectedTags: Tag[], addTag: (t: Tag) => void, onTextChange: (v: string) => void, deleteRowCallback: () => void, addRowCallback: (textIndex: number) => void, onSelectTags: (t: Tag[]) => void, addRef: (ref: HTMLInputElement) => void }) {
+  annotation, setAnnotation, start, current, end, text, tags, selectedTags, addTag, onTextChange, deleteRowCallback, addRowCallback, onSelectTags, addRef,
+} : {annotation: string; setAnnotation: (s: string) => void; start: number, end: number, current: number, text: string, tags: Tag[], selectedTags: Tag[], addTag: (t: Tag) => void, onTextChange: (v: string) => void, deleteRowCallback: () => void, addRowCallback: (textIndex: number) => void, onSelectTags: (t: Tag[]) => void, addRef: (ref: HTMLInputElement) => void }) {
   const combobox = useCombobox();
+
+  const [annotationVal, setAnnotationVal] = useState<string>(annotation);
 
   const handleValueSelect = (val: string) => onSelectTags([...selectedTags, tags.find((t) => t.name === val)!]);
 
@@ -85,6 +88,20 @@ export function IconComponent({
             </Combobox.Options>
           </Combobox.Dropdown>
         </Combobox>
+        <Popover>
+          <Popover.Target>
+            <IconBallpenFilled style={{ color: annotation.length > 0 ? 'cornflowerblue' : 'lightgray', cursor: 'pointer' }} />
+          </Popover.Target>
+          <Popover.Dropdown>
+            <Textarea
+              value={annotationVal}
+              onChange={(event) => setAnnotationVal(event.currentTarget.value)}
+              placeholder="Add Annotation"
+              onBlur={() => setAnnotation(annotationVal)}
+            />
+          </Popover.Dropdown>
+
+        </Popover>
       </Group>
     </Group>
   );

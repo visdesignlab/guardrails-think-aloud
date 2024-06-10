@@ -18,7 +18,7 @@ export function GlobalInitializer() {
   }, [setStorageEngine, storageEngine]);
 
   return (
-    <AppShell padding="md" header={{ height: 70 }} navbar={{ width: 300, breakpoint: 'xs' }} aside={{ width: 200, breakpoint: 'xs' }}>
+    <AppShell padding="md" header={{ height: 70 }}>
       <GlobalConfigParser />
     </AppShell>
   );

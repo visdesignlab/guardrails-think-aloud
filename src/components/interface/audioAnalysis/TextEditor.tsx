@@ -49,6 +49,13 @@ export function TextEditor({
     setTranscriptList(tempList);
   });
 
+  const setAnnotationCallback = useEvent((index: number, annotation: string) => {
+    const tempList = [...transcriptList];
+    tempList[index].annotation = annotation;
+
+    setTranscriptList(tempList);
+  });
+
   // special logic for when I hit backspace at the start of one of the text boxes. Delete that row, move the text to the one above it, copy up the tags, accounting for duplicates
   const deleteRowCallback = useEvent((index) => {
     if (index === 0) {
@@ -78,7 +85,11 @@ export function TextEditor({
     const editedItem = newEditedList[index];
 
     newEditedList.splice(index + 1, 0, {
-      transcriptMappingEnd: editedItem.transcriptMappingEnd, transcriptMappingStart: editedItem.transcriptMappingStart, text: editedItem.text.slice(textIndex), selectedTags: editedItem.selectedTags,
+      transcriptMappingEnd: editedItem.transcriptMappingEnd,
+      transcriptMappingStart: editedItem.transcriptMappingStart,
+      text: editedItem.text.slice(textIndex),
+      selectedTags: editedItem.selectedTags,
+      annotation: '',
     });
 
     newEditedList[index].text = newEditedList[index].text.slice(0, textIndex);
@@ -128,7 +139,11 @@ export function TextEditor({
         setTranscription({ results: newTranscription });
 
         setTranscriptList(newTranscription.map((t, i) => ({
-          transcriptMappingStart: i, transcriptMappingEnd: i, text: t.alternatives[0].transcript?.trim() || '', selectedTags: [],
+          transcriptMappingStart: i,
+          transcriptMappingEnd: i,
+          text: t.alternatives[0].transcript?.trim() || '',
+          selectedTags: [],
+          annotation: '',
         })));
 
         setCurrentShownTranscription(0);
@@ -202,6 +217,8 @@ export function TextEditor({
       </Group>
       {transcriptList.map((line, i) => (
         <IconComponent
+          annotation={line.annotation}
+          setAnnotation={(val) => setAnnotationCallback(i, val)}
           addRef={(ref) => { textRefs.current[i] = ref; }}
           onSelectTags={(newTags: Tag[]) => addTagCallback(i, newTags)}
           addRowCallback={(textIndex) => addRowCallback(i, textIndex)}

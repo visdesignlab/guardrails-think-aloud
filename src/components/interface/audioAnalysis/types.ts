@@ -18,6 +18,7 @@ export interface EditedText {
     transcriptMappingEnd: number;
     text: string;
     selectedTags: Tag[];
+    annotation: string;
 }
 
 export interface TranscriptLinesWithTimes {
