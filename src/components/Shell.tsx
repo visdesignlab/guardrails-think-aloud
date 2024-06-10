@@ -173,22 +173,6 @@ export function Shell({ globalConfig }: {
         </Provider>
       </StudyStoreContext.Provider>
     );
-  let toRender: ReactNode = null;
 
-  // Definitely a 404
-  if (!isValidStudyId) {
-    toRender = <ResourceNotFound />;
-  } else {
-    // If routing is null, we didn't match any routes
-    toRender = loaderOrRouting && store
-      ? (
-        <StudyStoreContext.Provider value={store}>
-          <Provider store={store.store}>
-            {loaderOrRouting}
-          </Provider>
-        </StudyStoreContext.Provider>
-      )
-      : <ResourceNotFound />;
-  }
-  return toRender;
+  return loaderOrRouting;
 }
