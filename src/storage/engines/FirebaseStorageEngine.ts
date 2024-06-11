@@ -26,6 +26,57 @@ import { hash } from './utils';
 import { StudyConfig } from '../../parser/types';
 import { EditedText } from '../../components/interface/audioAnalysis/types';
 
+const allParticipants = ['participant1',
+  'participant2',
+  'participant3',
+  'participant4',
+  'participant5',
+  'participant6',
+  'participant7',
+  'participant8',
+  'participant9',
+  'participant10',
+  'participant11',
+  '64889a71fa7592ae332fa34f',
+  '63626a68cf44b4184483c8e8',
+  '5c838a63532afd001506fd34',
+  '6171849094893d838e6e6f62',
+  '5b14898a30d562000155f1e9',
+  '5ba42e35984ec30001c6018d',
+  '5e690f83d1e0d41a69f00db8',
+  '65c10e659858a125507f47f7',
+  '616c844bac81732b87340f97',
+  '63f7a3b799889de3f13622db',
+  '65a4333efc75f965e7fc0cb5',
+  '65dca61cadaa2dd820a0f28c',
+  '65a00ba072965b5ce928d307',
+  '5cb3cdc781f3750001043bf2',
+  '5d76ac914c93440001c03fd7',
+  '65c691b5ca603ec8e389700e',
+  '5d31dc6e42678e001a0bdedd',
+  '6294ce94ea81c4554b141010',
+  '60743e408fd768b1a939ed4c',
+  '638a8c63c74f91261108cebf',
+  '5780d9a1900cc80001d2d1c2',
+  '5fa07c635b16f50d21483d5e',
+  '63ee65e3470c23cb401ca89a',
+  '5b99663d4cefb60001e7a214',
+  '63162bda14b96736b08a554d',
+  '6554e79557e3d6be08e32ceb',
+  '63d5021468a31efc02740c1e',
+  '63fbf0e3b18cc14adc0dbfb6',
+  '63beebaa4c5884797ff00a98',
+  '64217d8202361ad4dbed3596',
+  '58ff31a1d10e2b000108579e',
+  '63f779d27ba18edb4b6e5a57',
+  '62e023ae6d022e4d7bfc5db1',
+  '5e5521580ee1b951df544c3c',
+  '5bb756696322c5000159756c',
+  '637545d6428d85daeedc3df5',
+  '641ecfa9f83175a3d9f63636',
+  '611a8d23c1d17506a23df589',
+  '605e622287f0e806ffe04590'];
+
 type FirebaseStorageObjectType = 'sequenceArray' | 'participantData' | 'config';
 type FirebaseStorageObject<T extends FirebaseStorageObjectType> = T extends 'sequenceArray' ? (Sequence[] | object)
   : T extends 'participantData' ? (ParticipantData | object)
@@ -136,6 +187,84 @@ export class FirebaseStorageEngine extends StorageEngine {
       console.warn('Failed to connect to Firebase.');
       return Promise.reject(error);
     }
+  }
+
+  // async convertDataToUpdatedFormat() {
+  //   allParticipants.forEach(async (part) => {
+  //     const provData = await this._getFirebaseProvenance(part);
+  //     const windowEvents = await this._getFirebaseWindowEvents(part);
+  //     if (this.studyCollection) {
+  //       const participantDoc = doc(this.studyCollection, part);
+  //       const firestoreData = (await getDoc(participantDoc)).data() as ParticipantData | null;
+
+  //       const tempAnswers = firestoreData!.answers;
+  //       const tempSequence = firestoreData!.sequence as unknown as string[];
+
+  //       Object.entries(tempAnswers).forEach((entry) => {
+  //         const [key, val] = entry;
+  //         tempAnswers[`${key}_${tempSequence.indexOf(key)}`] = val;
+  //         tempAnswers[`${key}_${tempSequence.indexOf(key)}`].provenanceGraph = provData[key];
+  //         tempAnswers[`${key}_${tempSequence.indexOf(key)}`].windowEvents = windowEvents[key];
+
+  //         delete tempAnswers[key];
+  //       });
+
+  //       const newPartData: ParticipantData = {
+  //         rejected: false,
+  //         completed: true,
+  //         metadata: {
+  //           ip: '',
+  //           language: '',
+  //           resolution: {},
+  //           userAgent: '',
+  //         },
+  //         answers: tempAnswers,
+  //         participantId: part,
+  //         searchParams: firestoreData!.searchParams,
+  //         sequence: firestoreData!.sequence,
+  //         participantConfigHash: '8945d7f902e88656120c46946884d6d1af955f9b2dbf4871bb3cbc404cfb94ce',
+  //       };
+
+  //       const storageRef = ref(this.storage, `${this.collectionPrefix}${this.studyId}/participants/${part}_participantData`);
+
+  //       await this._pushToFirebaseStorageByRef(storageRef, 'participantData', newPartData);
+  //     }
+  //   });
+
+  // }
+
+  private async _getFirebaseProvenance(participantId: string) {
+    const storage = getStorage();
+    const storageRef = ref(storage, `${this.studyId}/${participantId}_provenance`);
+
+    let fullProvObj: Record<string, TrrackedProvenance> = {};
+    try {
+      const url = await getDownloadURL(storageRef);
+      const response = await fetch(url);
+      const fullProvStr = await response.text();
+      fullProvObj = JSON.parse(fullProvStr);
+    } catch {
+      console.warn(`Participant ${participantId} does not have a provenance graph for ${this.studyId}.`);
+    }
+
+    return fullProvObj;
+  }
+
+  private async _getFirebaseWindowEvents(participantId: string) {
+    const storage = getStorage();
+    const storageRef = ref(storage, `${this.studyId}/${participantId}_windowEvents`);
+
+    let fullProvObj: Record<string, TrrackedProvenance> = {};
+    try {
+      const url = await getDownloadURL(storageRef);
+      const response = await fetch(url);
+      const fullProvStr = await response.text();
+      fullProvObj = JSON.parse(fullProvStr);
+    } catch {
+      console.warn(`Participant ${participantId} does not have a provenance graph for ${this.studyId}.`);
+    }
+
+    return fullProvObj;
   }
 
   async initializeParticipantSession(searchParams: Record<string, string>, config: StudyConfig, metadata: ParticipantMetadata, urlParticipantId?: string) {
@@ -370,6 +499,8 @@ export class FirebaseStorageEngine extends StorageEngine {
     if (!this._verifyStudyDatabase(this.studyCollection)) {
       throw new Error('Study database not initialized');
     }
+
+    // this.convertDataToUpdatedFormat();
 
     // Get all participants
     const participantRefs = ref(this.storage, `${this.collectionPrefix}${this.studyId}/participants`);

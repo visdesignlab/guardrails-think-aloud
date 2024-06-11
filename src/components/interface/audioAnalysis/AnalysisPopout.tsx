@@ -318,10 +318,10 @@ export function AnalysisPopout() {
             <>
               <Box
                 ref={waveSurferDiv}
-                ml={participant && xScale ? xScale(participant.answers.audioTest.startTime) : 0}
-                mr={participant && xScale ? xScale(participant.answers['post-study-survey'].startTime) : 0}
+                ml={participant && xScale ? xScale(participant.answers.audioTest_2.startTime) : 0}
+                mr={participant && xScale ? xScale(participant.answers['post-study-survey_13'].startTime) : 0}
                 style={{
-                  WebkitBoxSizing: 'border-box', width: `${participant && xScale ? xScale(participant.answers['post-study-survey'].startTime) - xScale(participant.answers.audioTest.startTime) : 0}px`,
+                  WebkitBoxSizing: 'border-box', width: `${participant && xScale ? xScale(participant.answers['post-study-survey_13'].startTime) - xScale(participant.answers.audioTest_2.startTime) : 0}px`,
                 }}
               >
                 <WaveSurferContext.Provider value={wavesurfer} key={participant.participantId}>
@@ -329,10 +329,10 @@ export function AnalysisPopout() {
                 </WaveSurferContext.Provider>
                 {waveSurferLoading ? <Loader /> : null}
               </Box>
-              <TranscriptLines startTime={trialFilter ? xScale.domain()[0] : participant.answers.audioTest.startTime} xScale={xScale} transcriptLines={transcriptLines} currentShownTranscription={currentShownTranscription} />
+              <TranscriptLines startTime={trialFilter ? xScale.domain()[0] : participant.answers.audioTest_2.startTime} xScale={xScale} transcriptLines={transcriptLines} currentShownTranscription={currentShownTranscription} />
             </>
           ) : null }
-        {status === 'success' && participant && xScale ? <SingleTaskTimeline xScale={xScale} setSelectedTask={setSelectedTask} playTime={playTime - participant.answers.introduction.startTime} setPlayTime={_setPlayTime} isPlaying={isPlaying} setIsPlaying={_setIsPlaying} currentNode={currentNode} setCurrentNode={_setCurrentNode} participantData={participant} width={width} height={50} /> : null}
+        {status === 'success' && participant && xScale ? <SingleTaskTimeline xScale={xScale} setSelectedTask={setSelectedTask} playTime={playTime - participant.answers.introduction_0.startTime} setPlayTime={_setPlayTime} isPlaying={isPlaying} setIsPlaying={_setIsPlaying} currentNode={currentNode} setCurrentNode={_setCurrentNode} participantData={participant} width={width} height={50} /> : null}
 
         {/* <Group style={{ width: '100%', height: '100px' }} align="center" position="center">
           <Center>
