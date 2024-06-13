@@ -52,11 +52,11 @@ export default function ComponentController({ provState } : {provState?: unknown
     dispatch(setAnalysisTrialName(currentComponent!));
   }, [dispatch, setAnalysisTrialName, currentStep, currentComponent]);
 
-  // useEffect(() => {
-  //   if (currentStep && analysisTrialName && currentComponent !== analysisTrialName) {
-  //     navigate(`../${analysisTrialName}`);
-  //   }
-  // }, [analysisTrialName, currentComponent, currentStep, navigate]);
+  useEffect(() => {
+    if (currentComponent && analysisTrialName && currentComponent !== analysisTrialName) {
+      navigate(`../reviewer-${analysisTrialName}`);
+    }
+  }, [analysisTrialName, currentComponent, currentStep, navigate]);
 
   useEffect(() => {
     if (!currentStep || !studyConfig || !studyConfig.recordStudyAudio || !storage.storageEngine) {

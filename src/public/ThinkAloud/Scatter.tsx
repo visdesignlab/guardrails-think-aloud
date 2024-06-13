@@ -229,7 +229,7 @@ export function Scatter({
           </Stack>
         ) : null}
         {/* <ActionIcon variant="light" onClick={() => onClose(brushState.id)}><IconX /></ActionIcon> */}
-        <Button
+        {/* <Button
           ml={60}
           size="compact-sm"
           style={{ width: '130px' }}
@@ -240,8 +240,8 @@ export function Scatter({
           }}
         >
           Clear Selection
-        </Button>
-        { params.brushType === 'Paintbrush Selection'
+        </Button> */}
+        {/* { params.brushType === 'Paintbrush Selection'
           ? (
             <SegmentedControl
               defaultChecked
@@ -252,7 +252,7 @@ export function Scatter({
                 { label: 'De-Select', value: 'De-Select', disabled: brushedPoints.length === 0 },
               ]}
             />
-          ) : null}
+          ) : null} */}
       </Group>
       <Group style={{ width: '100%', height: '100%' }} wrap="nowrap">
 
