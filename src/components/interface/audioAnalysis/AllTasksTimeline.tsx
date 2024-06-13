@@ -11,7 +11,7 @@ const CHARACTER_SIZE = 8;
 
 export function AllTasksTimeline({
   xScale, participantData, width, height, setSelectedTask, trialFilter,
-} : {xScale: d3.ScaleLinear<number, number>, participantData: ParticipantData, width: number, height: number, setSelectedTask: (task: string) => void, trialFilter?: string }) {
+} : {xScale: d3.ScaleLinear<number, number>, participantData: ParticipantData, width: number, height: number, setSelectedTask: (task: string) => void, trialFilter?: string | null }) {
   const { analysisTrialName: selectedTask } = useStoreSelector((state) => state);
 
   // Creating labels for the tasks

@@ -17,7 +17,15 @@ export function SingleTaskTimeline({
 } : {xScale: d3.ScaleLinear<number, number>, participantData: ParticipantData, width: number, height: number, currentNode: string | null, setCurrentNode: (node: string) => void, isPlaying: boolean, setIsPlaying: (b: boolean) => void, playTime: number, setPlayTime: (n: number, p: number) => void, setSelectedTask: (s: string) => void}) {
   const totalLength = useMemo(() => xScale.domain()[1] - xScale.domain()[0], [xScale]);
 
-  const { trialFilter: trialName } = useParams();
+  const { trialFilter } = useParams();
+
+  const trialName = useMemo(() => {
+    if (!trialFilter || !participantData) {
+      return null;
+    }
+
+    return Object.keys(participantData.answers).find((key) => key.startsWith(trialFilter)) || null;
+  }, [participantData, trialFilter]);
 
   useEffect(() => {
     if (!trialName || !participantData) {
@@ -29,7 +37,7 @@ export function SingleTaskTimeline({
       return;
     }
 
-    const { startTime } = participantData.answers.introduction;
+    const { startTime } = participantData.answers.introduction_0;
 
     const actualTime = startTime + playTime;
 

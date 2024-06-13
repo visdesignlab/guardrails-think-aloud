@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   useCallback,
-  useEffect, useRef, useState,
+  useEffect, useMemo, useRef, useState,
 } from 'react';
 import { useParams } from 'react-router-dom';
 import {
@@ -34,6 +34,14 @@ export function TextEditor({
   const config = useStudyConfig();
 
   const textRefs = useRef<HTMLInputElement[]>([]);
+
+  const trialFilterAnswersName = useMemo(() => {
+    if (!trialFilter || !participant) {
+      return null;
+    }
+
+    return Object.keys(participant.answers).find((key) => key.startsWith(trialFilter)) || null;
+  }, [participant, trialFilter]);
 
   const textChangeCallback = useEvent((index: number, newVal: string) => {
     const tempList = [...transcriptList];
@@ -156,7 +164,7 @@ export function TextEditor({
   useEffect(() => {
     if (transcription && currentShownTranscription !== null && participant && playTime > 0) {
       let tempCurrentShownTranscription = currentShownTranscription;
-      const startTime = (trialFilter ? participant.answers[trialFilter].startTime : participant.answers.audioTest.startTime);
+      const startTime = (trialFilterAnswersName ? participant.answers[trialFilterAnswersName].startTime : participant.answers.audioTest.startTime);
 
       const timeInSeconds = Math.abs(playTime - startTime) / 1000;
 
@@ -179,7 +187,7 @@ export function TextEditor({
 
       setCurrentShownTranscription(tempCurrentShownTranscription);
     }
-  }, [currentShownTranscription, participant, playTime, setCurrentShownTranscription, transcription, trialFilter]);
+  }, [currentShownTranscription, participant, playTime, setCurrentShownTranscription, transcription, trialFilterAnswersName]);
 
   const editTagCallback = useCallback((oldTag: Tag, newTag: Tag) => {
     const tagIndex = tags.findIndex((t) => t.name === oldTag.name);

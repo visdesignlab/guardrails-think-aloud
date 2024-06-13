@@ -529,7 +529,7 @@ export class FirebaseStorageEngine extends StorageEngine {
       throw new Error('Participant not initialized');
     }
 
-    const participantData = await this._getFromFirebaseStorage(`participants/${this.currentParticipantId}`, 'participantData');
+    const participantData = await this._getFromFirebaseStorage(`participants/${participantId || this.currentParticipantId}`, 'participantData');
 
     return isParticipantData(participantData) ? participantData : null;
   }

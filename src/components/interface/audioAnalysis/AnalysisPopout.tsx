@@ -132,20 +132,28 @@ export function AnalysisPopout() {
   const [transcriptList, setTranscriptList] = useState<EditedText[]>([]);
 
   const allPartIds = useMemo(() => [...inPersonIds, ...prolificIds], []);
+
+  const trialFilterAnswersName = useMemo(() => {
+    if (!trialFilter || !participant) {
+      return null;
+    }
+
+    return Object.keys(participant.answers).find((key) => key.startsWith(trialFilter)) || null;
+  }, [participant, trialFilter]);
   // Create an instance of trrack to ensure getState works, incase the saved state is not a full state node.
   useEffect(() => {
-    if (trialName && participant) {
+    if (trialFilterAnswersName && participant) {
       const reg = Registry.create();
 
       const trrack = initializeTrrack({ registry: reg, initialState: {} });
 
-      if (participant.answers[trialName].provenanceGraph) {
-        trrack.importObject(deepCopy(participant.answers[trialName].provenanceGraph!));
+      if (participant.answers[trialFilterAnswersName].provenanceGraph) {
+        trrack.importObject(deepCopy(participant.answers[trialFilterAnswersName].provenanceGraph!));
 
         trrackForTrial.current = trrack;
       }
     }
-  }, [participant, trialName]);
+  }, [participant, trialFilterAnswersName]);
 
   const _setCurrentNode = useCallback((node: string) => {
     // if (trialName && participant && trrackForTrial) {
@@ -154,31 +162,33 @@ export function AnalysisPopout() {
     //   trrackForTrial.to(node);
     // }
 
-    if (trialName && participant && trrackForTrial.current) {
+    if (trialFilterAnswersName && participant && trrackForTrial.current) {
       // setProvState(trrackForTrial.getState(participant.answers[trialName].provenanceGraph?.nodes[currentNode]));
-      storeDispatch(saveAnalysisState(trrackForTrial.current.getState(participant.answers[trialName].provenanceGraph?.nodes[node])));
+      storeDispatch(saveAnalysisState(trrackForTrial.current.getState(participant.answers[trialFilterAnswersName].provenanceGraph?.nodes[node])));
 
       trrackForTrial.current.to(node);
     }
 
     setCurrentNode(node);
-  }, [participant, saveAnalysisState, storeDispatch, trialName, trrackForTrial]);
+  }, [participant, saveAnalysisState, storeDispatch, trialFilterAnswersName, trrackForTrial]);
 
   const setSelectedTask = useCallback((s: string) => {
     if (s !== trialName) {
       storeDispatch(setAnalysisTrialName(s));
       storeDispatch(saveAnalysisState(null));
 
-      if (participant && participant.answers[s].provenanceGraph) {
+      const sFullName = participant ? Object.keys(participant.answers).find((key) => key.startsWith(s)) : '';
+
+      if (participant && sFullName && participant.answers[sFullName].provenanceGraph) {
         const reg = Registry.create();
 
         const trrack = initializeTrrack({ registry: reg, initialState: {} });
 
-        trrack.importObject(deepCopy(participant.answers[s].provenanceGraph!));
+        trrack.importObject(deepCopy(participant.answers[sFullName].provenanceGraph!));
 
         trrackForTrial.current = trrack;
 
-        _setCurrentNode(participant.answers[s].provenanceGraph?.root || '');
+        _setCurrentNode(participant.answers[sFullName].provenanceGraph?.root || '');
       } else {
         storeDispatch(saveAnalysisState(null));
         setCurrentNode(null);
@@ -195,15 +205,15 @@ export function AnalysisPopout() {
 
   const timeUpdate = useEvent((t: number) => {
     // check if were on the next task. If so, navigate to the next task
-    if (participant && trialName && (participant.answers[trialName].endTime - participant.answers.audioTest.startTime) / 1000 < t) {
+    if (participant && trialName && trialFilterAnswersName && (participant.answers[trialFilterAnswersName].endTime - participant.answers.audioTest_2.startTime) / 1000 < t) {
       const seq = getSequenceFlatMap(participant.sequence);
       setSelectedTask(seq[seq.indexOf(trialName) + 1]);
-    } else if (participant && trialName && trrackForTrial.current && trrackForTrial.current.current.children.length > 0 && (trrackForTrial.current.graph.backend.nodes[trrackForTrial.current.current.children[0]].createdOn - participant.answers.audioTest.startTime) / 1000 < t) {
+    } else if (participant && trialName && trrackForTrial.current && trrackForTrial.current.current.children.length > 0 && (trrackForTrial.current.graph.backend.nodes[trrackForTrial.current.current.children[0]].createdOn - participant.answers.audioTest_2.startTime) / 1000 < t) {
       _setCurrentNode(trrackForTrial.current.current.children[0]);
     }
 
     if (participant && trialName) {
-      const startTime = (trialFilter ? participant.answers[trialFilter].startTime : participant.answers.audioTest.startTime);
+      const startTime = (trialFilterAnswersName ? participant.answers[trialFilterAnswersName].startTime : participant.answers.audioTest_2.startTime);
       setPlayTime(t * 1000 + startTime);
     }
   });
@@ -267,10 +277,10 @@ export function AnalysisPopout() {
 
     const extent = d3.extent(allStartTimes) as [number, number];
 
-    const scale = d3.scaleLinear([margin.left, width + margin.left + margin.right]).domain(trialFilter ? [participant.answers[trialFilter].startTime, participant.answers[trialFilter].endTime] : extent).clamp(true);
+    const scale = d3.scaleLinear([margin.left, width + margin.left + margin.right]).domain(trialFilterAnswersName ? [participant.answers[trialFilterAnswersName].startTime, participant.answers[trialFilterAnswersName].endTime] : extent).clamp(true);
 
     return scale;
-  }, [participant, trialFilter, width]);
+  }, [participant, trialFilterAnswersName, width]);
 
   const nextParticipantCallback = useCallback((positive: boolean) => {
     if (!participant) {
@@ -312,7 +322,7 @@ export function AnalysisPopout() {
             </ActionIcon>
           </Group>
         </Center>
-        {status === 'success' && participant && xScale ? <AllTasksTimeline trialFilter={trialFilter} xScale={xScale} setSelectedTask={setSelectedTask} participantData={participant} width={width} height={200} /> : <Center style={{ height: '275px' }}><Loader /></Center>}
+        {status === 'success' && participant && xScale ? <AllTasksTimeline trialFilter={trialFilterAnswersName} xScale={xScale} setSelectedTask={setSelectedTask} participantData={participant} width={width} height={200} /> : <Center style={{ height: '275px' }}><Loader /></Center>}
         { xScale && participant !== null
           ? (
             <>
