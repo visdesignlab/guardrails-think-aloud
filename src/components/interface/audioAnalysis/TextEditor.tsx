@@ -18,6 +18,7 @@ import { IconComponent } from './tiptapExtensions/IconComponent';
 import { TagEditor } from './TextEditorComponents/TagEditor';
 import { useStorageEngine } from '../../../storage/storageEngineHooks';
 import { getSequenceFlatMap } from '../../../utils/getSequenceFlatMap';
+import { useCurrentComponent } from '../../../routes/utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function TextEditor({
@@ -25,7 +26,10 @@ export function TextEditor({
 } : {participant: ParticipantData, playTime: number, setTranscriptLines: (lines: TranscriptLinesWithTimes[]) => void; setCurrentShownTranscription: (i: number) => void; currentShownTranscription: number, transcriptList: EditedText[], setTranscriptList: (e: EditedText[]) => void}) {
   const [transcription, setTranscription] = useState<TranscribedAudio | null>(null);
 
-  const { trrackId, studyId, trialFilter } = useParams();
+  const { trrackId, studyId, index: taskIndex } = useParams();
+  const _trialFilter = useCurrentComponent();
+
+  const trialFilter = taskIndex ? _trialFilter : null;
 
   const [tags, setTags] = useState<Tag[]>([]);
 

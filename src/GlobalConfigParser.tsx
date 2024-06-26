@@ -97,22 +97,24 @@ export function GlobalConfigParser() {
               path="/settings"
               element={(
                 <ProtectedRoute>
-                  <AppHeader studyIds={globalConfig.configsList} />
-                  <AppShell.Main>
-                    <GlobalSettings />
-                  </AppShell.Main>
+                  <AppShell>
+                    <AppHeader studyIds={globalConfig.configsList} />
+                    <AppShell.Main>
+                      <GlobalSettings />
+                    </AppShell.Main>
+                  </AppShell>
                 </ProtectedRoute>
             )}
             />
             <Route
               path="/login"
               element={(
-                <>
+                <AppShell>
                   <AppHeader studyIds={globalConfig.configsList} />
                   <AppShell.Main>
                     <Login />
                   </AppShell.Main>
-                </>
+                </AppShell>
             )}
             />
           </Routes>

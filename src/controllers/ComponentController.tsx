@@ -44,6 +44,8 @@ export default function ComponentController({ provState } : {provState?: unknown
   const { setIsRecording, setAnalysisTrialName } = useStoreActions();
   const { analysisTrialName, analysisProvState } = useStoreSelector((state) => state);
 
+  const { trrackId } = useParams();
+
   const navigate = useNavigate();
 
   const [prevTrialName, setPrevTrialName] = useState<string | null>(null);
@@ -53,10 +55,10 @@ export default function ComponentController({ provState } : {provState?: unknown
   }, [dispatch, setAnalysisTrialName, currentStep, currentComponent]);
 
   useEffect(() => {
-    if (currentComponent && analysisTrialName && currentComponent !== analysisTrialName) {
-      navigate(`../reviewer-${analysisTrialName}`);
+    if (currentComponent && analysisTrialName && currentComponent !== analysisTrialName && trrackId) {
+      navigate(`../reviewer-${analysisTrialName}`, { relative: 'path' });
     }
-  }, [analysisTrialName, currentComponent, currentStep, navigate]);
+  }, [analysisTrialName, currentComponent, currentStep, navigate, trrackId]);
 
   useEffect(() => {
     if (!currentStep || !studyConfig || !studyConfig.recordStudyAudio || !storage.storageEngine) {

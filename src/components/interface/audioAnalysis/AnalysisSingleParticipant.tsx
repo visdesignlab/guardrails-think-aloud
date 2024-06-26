@@ -77,7 +77,7 @@ export function AnalysisSingleParticipant({ participant, maxDuration } : {partic
             component={Link}
             target="_blank"
             to={`${current.pathname}/${participant.participantId}/ui`}
-            onClick={() => navigate(`${participant.participantId}/${getSequenceFlatMap(participant.sequence)[0]}`)}
+            onClick={() => navigate(`${participant.participantId}/reviewer-${getSequenceFlatMap(participant.sequence)[0]}`)}
           >
             {participant.participantId}
           </Anchor>

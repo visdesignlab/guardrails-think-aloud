@@ -1,5 +1,5 @@
 import { User } from '@firebase/auth';
-import { EditedText } from '../../components/interface/audioAnalysis/types';
+import { EditedText, Tag } from '../../components/interface/audioAnalysis/types';
 import { StudyConfig } from '../../parser/types';
 import { ParticipantMetadata, Sequence, StoredAnswer } from '../../store/types';
 import { ParticipantData } from '../types';
@@ -58,6 +58,10 @@ export abstract class StorageEngine {
   abstract saveAnswers(answers: Record<string, StoredAnswer>): Promise<void>;
 
   abstract saveEditedTranscript(participantId: string, transcript: EditedText[]): Promise<void>;
+
+  abstract saveTags(transcript: Tag[]): Promise<void>;
+
+  abstract getTags(): Promise<Tag[]>;
 
   abstract getEditedTranscript(participantId: string): Promise<EditedText[]>;
 

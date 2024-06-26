@@ -8,7 +8,7 @@ import { Provider } from 'react-redux';
 import {
   RouteObject, useLocation, useMatch, useParams, useRoutes, useSearchParams,
 } from 'react-router-dom';
-import { LoadingOverlay, Title } from '@mantine/core';
+import { AppShell, LoadingOverlay, Title } from '@mantine/core';
 import {
   GlobalConfig,
   Nullable,
@@ -70,23 +70,18 @@ export function GenerateStudiesRoutes({ studyId, config }: {
       });
 
       stepRoutes.push({
-        path: '/analysis/:trrackId/:trialName/',
+        path: '/analysis/:trrackId/:index/',
         element: <ComponentController />,
       });
 
       stepRoutes.push({
-        path: '/analysis/:trrackId/ui/:trialFilter?/',
-        element: <Analysis setProvState={() => null} />,
+        path: '/analysis/:trrackId/ui/:index?/',
+        element: <AppShell header={{ height: 70 }} navbar={{ collapsed: { desktop: true, mobile: true }, width: 0, breakpoint: 'xs' }} aside={{ collapsed: { desktop: true, mobile: true }, width: 0, breakpoint: 'xs' }}><Analysis setProvState={() => null} /></AppShell>,
       });
 
       stepRoutes.push({
         path: '/analysis',
         element: <AnalysisHome />,
-      });
-
-      stepRoutes.push({
-        path: '/:trialName',
-        element: <ComponentController />,
       });
 
       stepRoutes.push({

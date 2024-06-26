@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   ActionIcon,
@@ -28,6 +29,7 @@ import { TextEditor } from './TextEditor';
 import { EditedText, TranscriptLinesWithTimes } from './types';
 import { useStorageEngine } from '../../../storage/storageEngineHooks';
 import { getSequenceFlatMap } from '../../../utils/getSequenceFlatMap';
+import { useCurrentComponent } from '../../../routes/utils';
 
 const margin = {
   left: 5, top: 0, right: 5, bottom: 0,
@@ -94,9 +96,12 @@ const prolificIds = ['64889a71fa7592ae332fa34f',
   '605e622287f0e806ffe04590'];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function AnalysisPopout() {
-  const { trrackId, trialFilter } = useParams();
+export function AnalysisPopout({ mini } : {mini: boolean}) {
+  const { trrackId, index } = useParams();
 
+  const _trialFilter = useCurrentComponent();
+
+  const trialFilter = index ? _trialFilter : null;
   const { storageEngine } = useStorageEngine();
 
   const [currentShownTranscription, setCurrentShownTranscription] = useState(0);
@@ -155,15 +160,12 @@ export function AnalysisPopout() {
     }
   }, [participant, trialFilterAnswersName]);
 
-  const _setCurrentNode = useCallback((node: string) => {
-    // if (trialName && participant && trrackForTrial) {
-    //   setProvState(trrackForTrial.getState(participant.answers[trialName].provenanceGraph?.nodes[node]));
-
-    //   trrackForTrial.to(node);
-    // }
+  const _setCurrentNode = useCallback((node: string | undefined) => {
+    if (!node) {
+      return;
+    }
 
     if (trialFilterAnswersName && participant && trrackForTrial.current) {
-      // setProvState(trrackForTrial.getState(participant.answers[trialName].provenanceGraph?.nodes[currentNode]));
       storeDispatch(saveAnalysisState(trrackForTrial.current.getState(participant.answers[trialFilterAnswersName].provenanceGraph?.nodes[node])));
 
       trrackForTrial.current.to(node);
@@ -252,7 +254,9 @@ export function AnalysisPopout() {
     setPlayTime(n);
 
     if (wavesurfer && percent) {
-      wavesurfer?.seekTo(percent);
+      setTimeout(() => {
+        wavesurfer?.seekTo(percent);
+      });
     }
   }, [setPlayTime, wavesurfer]);
 
@@ -282,47 +286,69 @@ export function AnalysisPopout() {
     return scale;
   }, [participant, trialFilterAnswersName, width]);
 
+  const clickNextNode = useCallback((node: string | undefined) => {
+    if (!node) {
+      return;
+    }
+
+    if (trialFilterAnswersName && participant && trrackForTrial.current && xScale) {
+      const fullNode = participant.answers[trialFilterAnswersName].provenanceGraph!.nodes[node];
+      storeDispatch(saveAnalysisState(trrackForTrial.current.getState(participant.answers[trialFilterAnswersName].provenanceGraph?.nodes[node])));
+
+      trrackForTrial.current.to(node);
+
+      const totalLength = xScale.domain()[1] - xScale.domain()[0];
+
+      _setPlayTime(fullNode.createdOn + 1, (fullNode.createdOn - xScale.domain()[0]) / totalLength);
+    }
+  }, [_setPlayTime, participant, saveAnalysisState, storeDispatch, trialFilterAnswersName, xScale]);
+
   const nextParticipantCallback = useCallback((positive: boolean) => {
     if (!participant) {
       return;
     }
 
-    const index = allPartIds.indexOf(participant.participantId);
+    const _index = allPartIds.indexOf(participant.participantId);
 
     if (positive) {
-      navigate(`../../${trialFilter ? '../' : ''}${allPartIds[index + 1]}/ui/${trialFilter || ''}`, { relative: 'path' });
+      navigate(`../../${trialFilter ? '../' : ''}${allPartIds[_index + 1]}/ui/reviewer-${trialFilter || ''}`, { relative: 'path' });
     } else {
-      navigate(`../../${trialFilter ? '../' : ''}${allPartIds[index - 1]}/ui/${trialFilter || ''}`, { relative: 'path' });
+      navigate(`../../${trialFilter ? '../' : ''}${allPartIds[_index - 1]}/ui/reviewer-${trialFilter || ''}`, { relative: 'path' });
     }
   }, [allPartIds, navigate, participant, trialFilter]);
 
   return (
     <Group wrap="nowrap" gap={25}>
-      <Stack ref={ref} style={{ width: '100%' }} gap={25}>
-        <Center>
-          <Group>
-            <ActionIcon>
-              <IconArrowLeft onClick={() => nextParticipantCallback(false)} />
-            </ActionIcon>
-            <Select
-              style={{ width: '300px' }}
-              value={participant?.participantId}
-              onChange={(e) => navigate(`../../${trialFilter ? '../' : ''}${e}/ui/${trialFilter || ''}`, { relative: 'path' })}
-              data={[...inPersonIds, ...prolificIds]}
-            />
-            <Select
-              style={{ width: '300px' }}
-              clearable
-              value={trialFilter}
-              data={participant ? [...getSequenceFlatMap(participant.sequence)] : []}
-              onChange={(val) => navigate(`${trialFilter ? '../' : ''}${val || ''}`, { relative: 'path' })}
-            />
-            <ActionIcon>
-              <IconArrowRight onClick={() => nextParticipantCallback(true)} />
-            </ActionIcon>
-          </Group>
-        </Center>
-        {status === 'success' && participant && xScale ? <AllTasksTimeline trialFilter={trialFilterAnswersName} xScale={xScale} setSelectedTask={setSelectedTask} participantData={participant} width={width} height={200} /> : <Center style={{ height: '275px' }}><Loader /></Center>}
+      <Stack ref={ref} style={{ width: '100%' }} gap={!mini ? 25 : 0}>
+        { !mini ? (
+          <Center>
+            <Group>
+              <ActionIcon>
+                <IconArrowLeft onClick={() => nextParticipantCallback(false)} />
+              </ActionIcon>
+              <Select
+                style={{ width: '300px' }}
+                value={participant?.participantId}
+                onChange={(e) => navigate(`../../${trialFilter ? '../' : ''}${e}/ui/reviewer-${trialFilter || ''}`, { relative: 'path' })}
+                data={[...inPersonIds, ...prolificIds]}
+              />
+              <Select
+                style={{ width: '300px' }}
+                clearable
+                value={trialFilter}
+                data={participant ? [...getSequenceFlatMap(participant.sequence)] : []}
+                onChange={(val) => navigate(`${trialFilter ? '../' : ''}reviewer-${val || ''}`, { relative: 'path' })}
+              />
+              <ActionIcon>
+                <IconArrowRight onClick={() => nextParticipantCallback(true)} />
+              </ActionIcon>
+            </Group>
+          </Center>
+        ) : null}
+        {status === 'success' && participant && xScale
+          ? !mini ? <AllTasksTimeline trialFilter={trialFilterAnswersName} xScale={xScale} setSelectedTask={setSelectedTask} participantData={participant} width={width} height={200} /> : null
+          : !mini ? <Center style={{ height: '275px' }}><Loader /></Center>
+            : null}
         { xScale && participant !== null
           ? (
             <>
@@ -339,24 +365,19 @@ export function AnalysisPopout() {
                 </WaveSurferContext.Provider>
                 {waveSurferLoading ? <Loader /> : null}
               </Box>
-              <TranscriptLines startTime={trialFilter ? xScale.domain()[0] : participant.answers.audioTest_2.startTime} xScale={xScale} transcriptLines={transcriptLines} currentShownTranscription={currentShownTranscription} />
+              {!mini ? <TranscriptLines startTime={trialFilter ? xScale.domain()[0] : participant.answers.audioTest_2.startTime} xScale={xScale} transcriptLines={transcriptLines} currentShownTranscription={currentShownTranscription} /> : null }
             </>
           ) : null }
         {status === 'success' && participant && xScale ? <SingleTaskTimeline xScale={xScale} setSelectedTask={setSelectedTask} playTime={playTime - participant.answers.introduction_0.startTime} setPlayTime={_setPlayTime} isPlaying={isPlaying} setIsPlaying={_setIsPlaying} currentNode={currentNode} setCurrentNode={_setCurrentNode} participantData={participant} width={width} height={50} /> : null}
-
-        {/* <Group style={{ width: '100%', height: '100px' }} align="center" position="center">
-          <Center>
-            <Text color="dimmed" size={20} style={{ width: '100%' }} />
-          </Center>
-        </Group> */}
-        <Group>
+        <Group align="center" justify="center">
+          <ActionIcon variant="subtle"><IconArrowLeft onClick={() => clickNextNode((trrackForTrial.current?.current as any).parent)} /></ActionIcon>
           <Button onClick={() => _setIsPlaying(true)}>Play</Button>
           <Button onClick={() => _setIsPlaying(false)}>Pause</Button>
-          <Text>{new Date(playTime).toLocaleString()}</Text>
+          <ActionIcon variant="subtle"><IconArrowRight onClick={() => clickNextNode(trrackForTrial.current?.current.children[0])} /></ActionIcon>
         </Group>
 
         <Stack>
-          {participant ? <TextEditor transcriptList={transcriptList} setTranscriptList={setTranscriptList} setCurrentShownTranscription={setCurrentShownTranscription} currentShownTranscription={currentShownTranscription} participant={participant} playTime={playTime} setTranscriptLines={setTranscriptLines as any} /> : null}
+          {participant && !mini ? <TextEditor transcriptList={transcriptList} setTranscriptList={setTranscriptList} setCurrentShownTranscription={setCurrentShownTranscription} currentShownTranscription={currentShownTranscription} participant={participant} playTime={playTime} setTranscriptLines={setTranscriptLines as any} /> : null}
         </Stack>
       </Stack>
     </Group>

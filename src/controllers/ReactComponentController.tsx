@@ -1,10 +1,12 @@
 import { Suspense, useCallback } from 'react';
 import { ModuleNamespace } from 'vite/types/hot';
+import { AppShell, Text } from '@mantine/core';
 import { ReactComponent } from '../parser/types';
 import { StimulusParams } from '../store/types';
 import ResourceNotFound from '../ResourceNotFound';
 import { useStoreDispatch, useStoreActions } from '../store/store';
 import { useCurrentComponent, useCurrentStep } from '../routes/utils';
+import { AnalysisPopout } from '../components/interface/audioAnalysis/AnalysisPopout';
 
 const modules = import.meta.glob(
   '../public/**/*.{mjs,js,mts,ts,jsx,tsx}',
@@ -45,6 +47,11 @@ function ReactComponentController({ currentConfig, provState }: { currentConfig:
           />
         )
         : <ResourceNotFound path={currentConfig.path} />}
+      {currentStep.toString().startsWith('reviewer-') ? (
+        <AppShell.Footer p="md">
+          <AnalysisPopout mini />
+        </AppShell.Footer>
+      ) : null }
     </Suspense>
   );
 }

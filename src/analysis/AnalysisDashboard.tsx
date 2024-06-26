@@ -5,13 +5,13 @@ import AppHeader from './components/interface/AppHeader';
 
 export function AnalysisDashboard({ globalConfig }: { globalConfig: GlobalConfig; }) {
   return (
-    <>
+    <AppShell>
       <AppHeader studyIds={globalConfig.configsList} />
       <AppShell.Main>
         <Container fluid>
           <SummaryBlock globalConfig={globalConfig} />
         </Container>
       </AppShell.Main>
-    </>
+    </AppShell>
   );
 }

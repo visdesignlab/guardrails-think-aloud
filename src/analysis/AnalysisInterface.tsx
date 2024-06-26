@@ -52,7 +52,7 @@ export function AnalysisInterface(props: { globalConfig: GlobalConfig; }) {
   const showManage = import.meta.env.VITE_REVISIT_MODE !== 'public' && storageEngine instanceof FirebaseStorageEngine;
 
   return (
-    <>
+    <AppShell>
       <AppHeader studyIds={props.globalConfig.configsList} />
       <AppShell.Main>
         <Container fluid style={{ height: '100%' }}>
@@ -80,6 +80,6 @@ export function AnalysisInterface(props: { globalConfig: GlobalConfig; }) {
           </Tabs>
         </Container>
       </AppShell.Main>
-    </>
+    </AppShell>
   );
 }

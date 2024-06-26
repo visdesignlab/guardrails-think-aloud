@@ -10,7 +10,8 @@ export interface TranscribedAudio {
 
 export interface Tag {
     color: string,
-    name: string
+    name: string,
+    id: number
 }
 
 export interface EditedText {

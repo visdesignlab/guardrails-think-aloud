@@ -8,6 +8,7 @@ import { useNavigate, useParams } from 'react-router';
 import { current } from '@reduxjs/toolkit';
 import { ParticipantData } from '../../../storage/types';
 import { SingleTaskProvenance } from './SingleTaskProvenance';
+import { useCurrentComponent } from '../../../routes/utils';
 
 const margin = {
   left: 5, top: 0, right: 5, bottom: 0,
@@ -17,7 +18,11 @@ export function SingleTaskTimeline({
 } : {xScale: d3.ScaleLinear<number, number>, participantData: ParticipantData, width: number, height: number, currentNode: string | null, setCurrentNode: (node: string) => void, isPlaying: boolean, setIsPlaying: (b: boolean) => void, playTime: number, setPlayTime: (n: number, p: number) => void, setSelectedTask: (s: string) => void}) {
   const totalLength = useMemo(() => xScale.domain()[1] - xScale.domain()[0], [xScale]);
 
-  const { trialFilter } = useParams();
+  const { index } = useParams();
+
+  const _trialFilter = useCurrentComponent();
+
+  const trialFilter = index ? _trialFilter : null;
 
   const trialName = useMemo(() => {
     if (!trialFilter || !participantData) {
@@ -72,7 +77,7 @@ export function SingleTaskTimeline({
     }
   }, [currentNode, participantData, playTime, setCurrentNode, trialName]);
 
-  const currentNodeCallback = useCallback((node: string, nodeTime: number, taskName: string) => {
+  const currentNodeCallback = useCallback((node: string, nodeTime: number) => {
     setPlayTime(nodeTime, (nodeTime - xScale.domain()[0]) / totalLength);
 
     setCurrentNode(node);

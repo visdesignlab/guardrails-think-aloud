@@ -24,7 +24,7 @@ import {
 } from '../../store/types';
 import { hash } from './utils';
 import { StudyConfig } from '../../parser/types';
-import { EditedText } from '../../components/interface/audioAnalysis/types';
+import { EditedText, Tag } from '../../components/interface/audioAnalysis/types';
 
 const allParticipants = ['participant1',
   'participant2',
@@ -89,8 +89,28 @@ function isParticipantData(obj: unknown): obj is ParticipantData {
 }
 
 export class FirebaseStorageEngine extends StorageEngine {
-  saveEditedTranscript(participantId: string, transcript: EditedText[]): Promise<void> {
+  async saveTags(tags: Tag[]): Promise<void> {
+    const storageRef = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/tags/tags`);
+
+    const blob = new Blob([JSON.stringify(tags)], {
+      type: 'application/json',
+    });
+
+    await uploadBytes(storageRef, blob);
+  }
+
+  async getTags(): Promise<Tag[]> {
     throw new Error('Method not implemented.');
+  }
+
+  async saveEditedTranscript(participantId: string, transcript: EditedText[]): Promise<void> {
+    const storageRef = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/${participantId}`);
+
+    const blob = new Blob([JSON.stringify(transcript)], {
+      type: 'application/json',
+    });
+
+    await uploadBytes(storageRef, blob);
   }
 
   getEditedTranscript(participantId: string): Promise<EditedText[]> {

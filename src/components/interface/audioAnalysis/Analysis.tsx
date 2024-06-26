@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { AppShell } from '@mantine/core';
 import { AnalysisPopout } from './AnalysisPopout';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,7 +22,9 @@ export function Analysis({ setProvState } : {setProvState: (state: any) => void}
 
   return (
     <div>
-      <AnalysisPopout />
+      <AppShell.Main p="sm">
+        <AnalysisPopout mini={false} />
+      </AppShell.Main>
     </div>
   );
 }
