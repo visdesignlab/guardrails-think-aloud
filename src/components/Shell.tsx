@@ -110,8 +110,6 @@ export function Shell({ globalConfig }: {
   const [activeConfig, setActiveConfig] = useState<ParsedStudyConfig | null>(null);
   const isValidStudyId = globalConfig.configsList.includes(studyId);
 
-  const auth = useAuth();
-
   useEffect(() => {
     getStudyConfig(studyId, globalConfig).then((config) => {
       setActiveConfig(config);
@@ -149,14 +147,14 @@ export function Shell({ globalConfig }: {
         ip: ip.ip,
       };
 
-      const participantSession = await storageEngine.initializeParticipantSession(searchParamsObject, activeConfig, metadata, urlParticipantId);
+      const participantSession = await storageEngine.initializeParticipantSession(studyId, searchParamsObject, activeConfig, metadata, urlParticipantId);
 
       // Initialize the redux stores
-      const newStore = await studyStoreCreator(studyId, activeConfig, participantSession.sequence, metadata, participantSession.answers, auth.user.isAdmin);
+      const newStore = await studyStoreCreator(studyId, activeConfig, participantSession.sequence, metadata, participantSession.answers);
       setStore(newStore);
     }
     initializeUserStoreRouting();
-  }, [storageEngine, activeConfig, studyId, searchParams, auth.user.isAdmin]);
+  }, [storageEngine, activeConfig, studyId, searchParams]);
 
   // const routing = useRoutes(routes);
 

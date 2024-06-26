@@ -20,10 +20,12 @@ import { ParticipantData, StoredAnswer, StudyConfig } from '../../parser/types';
 import { ParticipantMetadata } from '../../store/types';
 import { configSequenceToUniqueTrials, findBlockForStep, getSequenceFlatMap } from '../../utils/getSequenceFlatMap';
 import { useStorageEngine } from '../../storage/storageEngineHooks';
+import { DownloadButtons } from '../../components/downloader/DownloadButtons';
+import { useAuth } from '../../store/hooks/useAuth';
 
 function AnswerCell({ cellData }: { cellData: StoredAnswer }) {
   return (
-    <td>
+    <Table.Td>
       <Stack miw={100}>
         {Object.entries(cellData.answer).map(([key, storedAnswer]) => (
           <Box key={`cell-${key}`}>
@@ -37,25 +39,25 @@ function AnswerCell({ cellData }: { cellData: StoredAnswer }) {
           </Box>
         ))}
       </Stack>
-    </td>
+    </Table.Td>
   );
 }
 
 function DurationCell({ cellData }: { cellData: StoredAnswer }) {
   const duration = (cellData.endTime - cellData.startTime) / 1000;
   return (
-    <td>
+    <Table.Td>
       {duration.toFixed(1)}
       {' '}
       s
-    </td>
+    </Table.Td>
   );
 }
 
 function MetaCell(props:{metaData: ParticipantMetadata}) {
   const { metaData } = props;
   return (
-    <td>
+    <Table.Td>
       <Spoiler w={200} hideLabel="hide" maxHeight={50} showLabel="more">
         <Stack gap="xs">
           <Box>
@@ -80,7 +82,7 @@ function MetaCell(props:{metaData: ParticipantMetadata}) {
           </Box>
         </Stack>
       </Spoiler>
-    </td>
+    </Table.Td>
   );
 }
 export function TableView({
@@ -96,10 +98,15 @@ export function TableView({
 }) {
   const { storageEngine } = useStorageEngine();
   const { studyId } = useParams();
+  const { user } = useAuth();
   const rejectParticipant = async (participantId: string) => {
     if (storageEngine && studyId) {
-      await storageEngine.rejectParticipant(studyId, participantId);
-      await refresh();
+      if (user.isAdmin) {
+        await storageEngine.rejectParticipant(studyId, participantId);
+        await refresh();
+      } else {
+        console.warn('You are not authorized to perform this action.');
+      }
     }
   };
   const [checked, setChecked] = useState<string[]>([]);
@@ -143,36 +150,36 @@ export function TableView({
   }
   const uniqueTrials = configSequenceToUniqueTrials(studyConfig.sequence);
   const headers = [
-    <th key="action">
+    <Table.Th key="action">
       <Flex justify="center">
         <Checkbox mb={-4} checked={checked.length === [...completed, ...inProgress].length} onChange={() => handleSelect('all')} />
       </Flex>
-    </th>,
-    <th key="ID">ID</th>,
-    <th key="status">Status</th>,
-    <th key="meta">Meta</th>,
+    </Table.Th>,
+    <Table.Th key="ID">ID</Table.Th>,
+    <Table.Th key="status">Status</Table.Th>,
+    <Table.Th key="meta">Meta</Table.Th>,
     ...uniqueTrials.flatMap((trial) => [
-      <th key={`header-${trial.componentName}-${trial.timesSeenInBlock}`}>{trial.componentName}</th>,
-      <th key={`header-${trial.componentName}-${trial.timesSeenInBlock}-duration`}>
+      <Table.Th key={`header-${trial.componentName}-${trial.timesSeenInBlock}`}>{trial.componentName}</Table.Th>,
+      <Table.Th key={`header-${trial.componentName}-${trial.timesSeenInBlock}-duration`}>
         {trial.componentName}
         {' '}
         Duration
-      </th>,
+      </Table.Th>,
     ]),
-    <th key="total-duration">Total Duration</th>,
+    <Table.Th key="total-duration">Total Duration</Table.Th>,
   ];
 
   const rows = [...completed, ...inProgress].map((record) => (
-    <tr key={record.participantId}>
-      <td>
+    <Table.Tr key={record.participantId}>
+      <Table.Td>
         <Flex justify="center">
           <Checkbox mb={-4} checked={checked.includes(record.participantId)} onChange={() => handleSelect(record.participantId)} />
         </Flex>
-      </td>
-      <td style={{ whiteSpace: 'nowrap' }}>
+      </Table.Td>
+      <Table.Td style={{ whiteSpace: 'nowrap' }}>
         {record.participantId}
-      </td>
-      <td>
+      </Table.Td>
+      <Table.Td>
         <Flex direction="row" align="center">
           {
           // eslint-disable-next-line no-nested-ternary
@@ -188,8 +195,8 @@ export function TableView({
           </Text>
           )}
         </Flex>
-      </td>
-      {record.metadata ? <MetaCell metaData={record.metadata} /> : <td>N/A</td>}
+      </Table.Td>
+      {record.metadata ? <MetaCell metaData={record.metadata} /> : <Table.Td>N/A</Table.Td>}
       {uniqueTrials.map((trial) => {
         const sequenceBlock = findBlockForStep(record.sequence, trial.orderPath);
         const trialData = sequenceBlock && Object.entries(record.answers)
@@ -210,8 +217,8 @@ export function TableView({
           </React.Fragment>
         ) : (
           <React.Fragment key={`cellgroup-${record.participantId}-${trial.componentName}-${trial.timesSeenInBlock}`}>
-            <td>N/A</td>
-            <td>N/A</td>
+            <Table.Td>N/A</Table.Td>
+            <Table.Td>N/A</Table.Td>
           </React.Fragment>
         ));
       })}
@@ -224,7 +231,7 @@ export function TableView({
         }}
         key={`cell-${record.participantId}-total-duration`}
       />
-    </tr>
+    </Table.Tr>
   ));
 
   return (
@@ -239,20 +246,24 @@ export function TableView({
               placeholder="Search for a participant ID"
               data={[...completed, ...inProgress].map((record) => ({ value: record.participantId, label: record.participantId }))}
               searchable
+              value={null}
               leftSection={<IconSearch size={14} />}
               onChange={(value) => value && handleSelect(value)}
             />
           </Group>
           <Group>
-            <Button disabled={checked.length === 0} onClick={openModal} color="red" size="xs">Reject Participants</Button>
+            <DownloadButtons allParticipants={[...completed, ...inProgress]} studyId={studyId || ''} />
+            <Button disabled={checked.length === 0 || !user.isAdmin} onClick={openModal} color="red">Reject Participants</Button>
           </Group>
         </Flex>
-        <Table striped withTableBorder>
-          <thead>
-            <tr>{headers}</tr>
-          </thead>
-          <tbody>{rows}</tbody>
-        </Table>
+        <Flex direction="column" style={{ width: '100%', overflow: 'auto' }}>
+          <Table striped withTableBorder>
+            <Table.Thead>
+              <Table.Tr>{headers}</Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>{rows}</Table.Tbody>
+          </Table>
+        </Flex>
       </>
     ) : (
       <Flex justify="center" align="center" style={{ height: '100%' }}>

@@ -24,6 +24,8 @@ export interface UserWrapped {
   adminVerification:boolean
 }
 
+export type REVISIT_MODE = 'dataCollectionEnabled' | 'studyNavigatorEnabled' | 'analyticsInterfacePubliclyAccessible';
+
 export abstract class StorageEngine {
   protected engine: string;
 
@@ -47,9 +49,11 @@ export abstract class StorageEngine {
 
   abstract initializeStudyDb(studyId: string, config: StudyConfig): Promise<void>;
 
-  abstract initializeParticipantSession(searchParams: Record<string, string>, config: StudyConfig, metadata: ParticipantMetadata, urlParticipantId?: string): Promise<ParticipantData>;
+  abstract initializeParticipantSession(studyId: string, searchParams: Record<string, string>, config: StudyConfig, metadata: ParticipantMetadata, urlParticipantId?: string): Promise<ParticipantData>;
 
   abstract getCurrentConfigHash(): Promise<string>;
+
+  abstract getAllConfigsFromHash(hashes: string[], studyId: string): Promise<Record<string, StudyConfig>>;
 
   abstract getCurrentParticipantId(urlParticipantId?: string): Promise<string>;
 
@@ -81,7 +85,7 @@ export abstract class StorageEngine {
 
   abstract getParticipantData(participantId?: string): Promise<ParticipantData | null>;
 
-  abstract nextParticipant(config: StudyConfig, metadata: ParticipantMetadata): Promise<ParticipantData>;
+  abstract nextParticipant(): Promise<void>;
 
   abstract saveAudio(audioStream: MediaRecorder, taskName: string): Promise<void>;
 
@@ -90,4 +94,8 @@ export abstract class StorageEngine {
   abstract validateUser(user: UserWrapped | null): Promise<boolean>;
 
   abstract rejectParticipant(studyId: string, participantID: string): Promise<void>;
+
+  abstract setMode(studyId: string, mode: REVISIT_MODE, value: boolean): Promise<void>;
+
+  abstract getModes(studyId: string): Promise<Record<REVISIT_MODE, boolean>>;
 }

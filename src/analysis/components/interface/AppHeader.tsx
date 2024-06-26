@@ -40,7 +40,7 @@ export default function AppHeader({ studyIds }: { studyIds: string[] }) {
       name: 'Analysis',
       leftIcon: <IconChartBar />,
       href: '/analysis/dashboard',
-      needAdmin: true,
+      needAdmin: false,
     },
     {
       name: 'Settings',
@@ -55,7 +55,7 @@ export default function AppHeader({ studyIds }: { studyIds: string[] }) {
       <Grid mt={-7} align="center">
         <Grid.Col span={6}>
           <Flex align="center" onClick={() => (inAnalysis ? navigate('/analysis/dashboard') : navigate('/'))} style={{ cursor: 'pointer' }}>
-            <Image maw={40} src={`${PREFIX}revisitAssets/revisitLogoSquare.svg`} alt="Revisit Logo" />
+            <Image w={40} src={`${PREFIX}revisitAssets/revisitLogoSquare.svg`} alt="Revisit Logo" />
             <Space w="md" />
             <Title order={4} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {inAnalysis ? 'ReVISit Analytics Platform' : 'ReVISit Studies'}
@@ -70,6 +70,7 @@ export default function AppHeader({ studyIds }: { studyIds: string[] }) {
           >
             {inAnalysis && (
             <Select
+              allowDeselect={false}
               placeholder="Select Study"
               data={selectorData}
               value={studyId}
@@ -125,7 +126,7 @@ export default function AppHeader({ studyIds }: { studyIds: string[] }) {
                           size="sm"
                           ml={10}
                           style={{ cursor: 'pointer' }}
-                          onClick={logout}
+                          onClick={() => { logout(); navigate('/login'); setNavOpen(false); }}
                         >
                           Logout
                         </Text>

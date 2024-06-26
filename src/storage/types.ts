@@ -44,17 +44,17 @@ Each key in answer will be labeled the same as the response component that it re
 The keys of this object are the names of the components with an additional underscore and number appended to the end. This is done so that the study creator can discern between not only the components but also between the various instances of the same component when necessary. All times are in **epoch milliseconds**.
 
 :::info
-The `"provenanceGraph"` key will only exist if the component is a React component and if it is utilizing Trrack. See [here](StoredAnswer) for more details.
+The `"provenanceGraph"` key will only exist if the component is a React component and if it is utilizing Trrack. See [here](../StoredAnswer) for more details.
 :::
 
-We can see at a high level that we are given the answer that the user submitted, the start time for the component, and the end time. In addition to this, we have a list of window events. You can find more information about the StoredAnswer object [here](StoredAnswer).
+We can see at a high level that we are given the answer that the user submitted, the start time for the component, and the end time. In addition to this, we have a list of window events. You can find more information about the StoredAnswer object [here](../StoredAnswer).
 */
 export interface ParticipantData {
   /** Unique ID  associated with the participant */
   participantId: string;
   /** Unique ID corresponding to the Configuration that the participant received. */
   participantConfigHash: string;
-  /** Sequence of components that the participant received. */
+  /** Sequence of components that the participant received. This is an internal data type and is compiled from the ComponentBlocks in the StudyConfig sequence. */
   sequence: Sequence;
   /** Object whose keys are the component names and values are StoredAnswer objects. */
   answers: Record<string, StoredAnswer>;

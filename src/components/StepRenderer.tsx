@@ -1,7 +1,7 @@
 import { AppShell } from '@mantine/core';
 import { Outlet } from 'react-router-dom';
 import {
-  useEffect, useRef,
+  useEffect, useMemo, useRef, useState,
 } from 'react';
 import debounce from 'lodash.debounce';
 import AppAside from './interface/AppAside';
@@ -13,6 +13,8 @@ import { EventType } from '../store/types';
 import { useStudyConfig } from '../store/hooks/useStudyConfig';
 import { WindowEventsContext } from '../store/hooks/useWindowEvents';
 import { useStoreSelector } from '../store/store';
+import { useStorageEngine } from '../storage/storageEngineHooks';
+import { useStudyId } from '../routes/utils';
 
 export function StepRenderer() {
   const windowEvents = useRef<EventType[]>([]);
@@ -20,7 +22,7 @@ export function StepRenderer() {
   const studyConfig = useStudyConfig();
   const windowEventDebounceTime = studyConfig.uiConfig.windowEventDebounceTime ?? 100;
 
-  const asideOpen = useStoreSelector((state) => state.showStudyBrowser);
+  const showStudyBrowser = useStoreSelector((state) => state.showStudyBrowser);
 
   // Attach event listeners
   useEffect(() => {
@@ -92,12 +94,36 @@ export function StepRenderer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const sidebarWidth = studyConfig.uiConfig.sidebarWidth ?? 300;
+
+  const { storageEngine } = useStorageEngine();
+  const studyId = useStudyId();
+  const [studyNavigatorEnabled, setStudyNavigatorEnabled] = useState(false);
+  const [dataCollectionEnabled, setDataCollectionEnabled] = useState(false);
+  useEffect(() => {
+    const checkStudyNavigatorEnabled = async () => {
+      if (storageEngine) {
+        const modes = await storageEngine.getModes(studyId);
+        setStudyNavigatorEnabled(modes.studyNavigatorEnabled);
+        setDataCollectionEnabled(modes.dataCollectionEnabled);
+      }
+    };
+    checkStudyNavigatorEnabled();
+  }, [storageEngine, studyId]);
+
+  const asideOpen = useMemo(() => studyNavigatorEnabled && showStudyBrowser, [studyNavigatorEnabled, showStudyBrowser]);
+
   return (
     <WindowEventsContext.Provider value={windowEvents}>
-      <AppShell padding="md" header={{ height: 70 }} navbar={{ width: 300, breakpoint: 'xs', collapsed: { desktop: !studyConfig.uiConfig.sidebar, mobile: !studyConfig.uiConfig.sidebar } }} aside={{ width: 300, breakpoint: 'xs', collapsed: { desktop: !asideOpen, mobile: !asideOpen } }}>
+      <AppShell
+        padding="md"
+        header={{ height: 70 }}
+        navbar={{ width: sidebarWidth, breakpoint: 'xs', collapsed: { desktop: !studyConfig.uiConfig.sidebar, mobile: !studyConfig.uiConfig.sidebar } }}
+        aside={{ width: 360, breakpoint: 'xs', collapsed: { desktop: !asideOpen, mobile: !asideOpen } }}
+      >
         <AppNavBar />
         <AppAside />
-        <AppHeader />
+        <AppHeader studyNavigatorEnabled={studyNavigatorEnabled} dataCollectionEnabled={dataCollectionEnabled} />
         <HelpModal />
         <AlertModal />
         <AppShell.Main>

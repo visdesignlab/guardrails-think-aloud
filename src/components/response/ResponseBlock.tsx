@@ -79,7 +79,7 @@ export default function ResponseBlock({
 
   return (
     <div style={style}>
-      {responses.map((response) => (
+      {responses.map((response, index) => (
         <React.Fragment key={`${response.id}-${currentStep}`}>
           {response.hidden ? (
             ''
@@ -93,6 +93,7 @@ export default function ResponseBlock({
                   }),
                 }}
                 response={response}
+                index={index + 1}
               />
               {hasCorrectAnswerFeedback && checkClicked && (
                 <Text>
@@ -104,7 +105,7 @@ export default function ResponseBlock({
         </React.Fragment>
       ))}
 
-      <Group justify="right" gap="xs" mt="xl">
+      <Group justify="right" gap="xs">
         {hasCorrectAnswerFeedback && showNextBtn && (
           <Button
             onClick={() => setCheckClicked(true)}
