@@ -61,13 +61,13 @@ export abstract class StorageEngine {
 
   abstract saveAnswers(answers: Record<string, StoredAnswer>): Promise<void>;
 
-  abstract saveEditedTranscript(participantId: string, transcript: EditedText[]): Promise<void>;
+  abstract saveEditedTranscript(participantId: string, authId: string, taskId: string, transcript: EditedText[]): Promise<void>;
 
   abstract saveTags(transcript: Tag[]): Promise<void>;
 
   abstract getTags(): Promise<Tag[]>;
 
-  abstract getEditedTranscript(participantId: string): Promise<EditedText[]>;
+  abstract getEditedTranscript(participantId: string, authId: string, taskId: string): Promise<EditedText[]>;
 
   abstract getAudio(taskList: string[], participantId?: string): Promise<string[]>;
 

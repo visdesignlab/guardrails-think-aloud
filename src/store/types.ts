@@ -134,5 +134,7 @@ export interface StoreState {
   iframeProvenance: TrrackedProvenance | null;
   metadata: ParticipantMetadata;
   analysisTrialName: string | null;
+  analysisParticipantName: string | null;
   analysisProvState: unknown | null;
+  analysisWaveformTime: number;
 }

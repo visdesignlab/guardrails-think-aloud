@@ -90,7 +90,7 @@ export function Histogram({
       return null;
     }
 
-    return d3.scaleBand([margin.left, width + margin.left]).domain(allDataTable.array(brushState.xCol).sort()).paddingInner(0.1);
+    return d3.scaleBand([margin.left, width + margin.left]).domain(allDataTable.array(brushState.xCol).sort() as string[]).paddingInner(0.1);
   }, [allDataTable, width, brushState.xCol]);
 
   const rects = useMemo(() => {

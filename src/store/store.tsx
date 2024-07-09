@@ -3,7 +3,9 @@ import {
 } from '@reduxjs/toolkit';
 import { createContext, useContext } from 'react';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
-import { createStateSyncMiddleware, initMessageListener, initStateWithPrevTab } from 'redux-state-sync';
+import {
+  createStateSyncMiddleware, initMessageListener, initStateWithPrevTab, withReduxStateSync,
+} from 'redux-state-sync';
 import { ResponseBlockLocation, StudyConfig } from '../parser/types';
 import {
   StoredAnswer, TrialValidation, TrrackedProvenance, StoreState, Sequence, ParticipantMetadata,
@@ -48,6 +50,8 @@ export async function studyStoreCreator(
     metadata,
     analysisTrialName: null,
     analysisProvState: null,
+    analysisParticipantName: null,
+    analysisWaveformTime: 0,
   };
 
   const storeSlice = createSlice({
@@ -74,6 +78,12 @@ export async function studyStoreCreator(
       },
       setAnalysisTrialName: (state, action: PayloadAction<string | null>) => {
         state.analysisTrialName = action.payload;
+      },
+      setAnalysisParticipantName: (state, action: PayloadAction<string | null>) => {
+        state.analysisParticipantName = action.payload;
+      },
+      setAnalysisWaveformTime: (state, action: PayloadAction<number>) => {
+        state.analysisWaveformTime = action.payload;
       },
       setIframeProvenance: (state, action: PayloadAction<TrrackedProvenance | null>) => {
         state.iframeProvenance = action.payload;
@@ -127,13 +137,14 @@ export async function studyStoreCreator(
     },
   });
 
-  const middlewares = [createStateSyncMiddleware({})];
+  const syncMiddleware = createStateSyncMiddleware({});
 
   const store = configureStore(
     {
-      reducer: storeSlice.reducer,
+      reducer: withReduxStateSync(storeSlice.reducer),
       preloadedState: initialState,
-      middleware: middlewares,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      middleware: (getDefaultMiddleware) => getDefaultMiddleware().prepend(syncMiddleware as any),
     },
   );
 

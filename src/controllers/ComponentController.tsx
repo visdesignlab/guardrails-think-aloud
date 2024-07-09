@@ -41,8 +41,8 @@ export default function ComponentController({ provState } : {provState?: unknown
 
   const [audioStream, setAudioStream] = useState<MediaRecorder | null>(null);
   const dispatch = useStoreDispatch();
-  const { setIsRecording, setAnalysisTrialName } = useStoreActions();
-  const { analysisTrialName, analysisProvState } = useStoreSelector((state) => state);
+  const { setIsRecording } = useStoreActions();
+  const { analysisTrialName, analysisProvState, analysisParticipantName } = useStoreSelector((state) => state);
 
   const { trrackId } = useParams();
 
@@ -51,14 +51,10 @@ export default function ComponentController({ provState } : {provState?: unknown
   const [prevTrialName, setPrevTrialName] = useState<string | null>(null);
 
   useEffect(() => {
-    dispatch(setAnalysisTrialName(currentComponent!));
-  }, [dispatch, setAnalysisTrialName, currentStep, currentComponent]);
-
-  useEffect(() => {
-    if (currentComponent && analysisTrialName && currentComponent !== analysisTrialName && trrackId) {
-      navigate(`../reviewer-${analysisTrialName}`, { relative: 'path' });
+    if (currentComponent && analysisTrialName && trrackId && (currentComponent !== analysisTrialName || trrackId !== analysisParticipantName)) {
+      navigate(`../../${analysisParticipantName || trrackId}/reviewer-${analysisTrialName}`, { relative: 'path' });
     }
-  }, [analysisTrialName, currentComponent, currentStep, navigate, trrackId]);
+  }, [analysisParticipantName, analysisProvState, analysisTrialName, currentComponent, currentStep, navigate, trrackId]);
 
   useEffect(() => {
     if (!currentStep || !studyConfig || !studyConfig.recordStudyAudio || !storage.storageEngine) {

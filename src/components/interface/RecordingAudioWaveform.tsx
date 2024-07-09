@@ -17,7 +17,7 @@ export default function RecordingAudioWaveform({ width = 70, height = 50 }: {wid
       wavesurferRef.current = waveSurfer;
 
       if (wavesurferRef.current) {
-        const record = wavesurferRef.current.registerPlugin(RecordPlugin.create({ scrollingWaveform: true, renderRecordedAudio: false }));
+        const record = wavesurferRef.current.registerPlugin(RecordPlugin.create({ scrollingWaveform: true, renderRecordedAudio: false } as never));
         record.startRecording();
         wavesurferRef.current.setOptions({ height: 50, waveColor: '#FA5252' });
       }

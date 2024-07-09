@@ -30,6 +30,7 @@ import { EditedText, TranscriptLinesWithTimes } from './types';
 import { useStorageEngine } from '../../../storage/storageEngineHooks';
 import { getSequenceFlatMap } from '../../../utils/getSequenceFlatMap';
 import { useCurrentComponent } from '../../../routes/utils';
+import { useAuth } from '../../../store/hooks/useAuth';
 
 const margin = {
   left: 5, top: 0, right: 5, bottom: 0,
@@ -38,6 +39,14 @@ const margin = {
 function getParticipantData(trrackId: string | undefined, storageEngine: StorageEngine | undefined) {
   if (storageEngine) {
     return storageEngine.getParticipantData(trrackId);
+  }
+
+  return null;
+}
+
+async function getTranscript(storageEngine: StorageEngine | undefined, partId: string | undefined, trialName: string | undefined, authEmail: string | null | undefined) {
+  if (storageEngine && partId && trialName && authEmail) {
+    return await storageEngine.getEditedTranscript(partId, authEmail, trialName);
   }
 
   return null;
@@ -101,7 +110,10 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
 
   const _trialFilter = useCurrentComponent();
 
-  const trialFilter = index ? _trialFilter : null;
+  const auth = useAuth();
+
+  const trialFilter = useMemo(() => (index ? _trialFilter : null), [_trialFilter, index]);
+
   const { storageEngine } = useStorageEngine();
 
   const [currentShownTranscription, setCurrentShownTranscription] = useState(0);
@@ -124,9 +136,9 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
 
   const navigate = useNavigate();
 
-  const { analysisTrialName: trialName } = useStoreSelector((state) => state);
+  const { analysisTrialName: trialName, analysisWaveformTime } = useStoreSelector((state) => state);
 
-  const { setAnalysisTrialName } = useStoreActions();
+  const { setAnalysisTrialName, setAnalysisParticipantName, setAnalysisWaveformTime } = useStoreActions();
 
   const [waveSurferLoading, setWaveSurferLoading] = useState<boolean>(true);
 
@@ -134,7 +146,22 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
 
   const [transcriptLines, setTranscriptLines] = useState<TranscriptLinesWithTimes[]>([]);
 
-  const [transcriptList, setTranscriptList] = useState<EditedText[]>([]);
+  const [transcriptList, _setTranscriptList] = useState<EditedText[] | null>(null);
+
+  const setTranscriptList = useCallback((editedText: EditedText[]) => {
+    _setTranscriptList(editedText);
+    if (storageEngine && trrackId && _trialFilter) {
+      storageEngine.saveEditedTranscript(trrackId, auth.user.user?.email || 'temp', _trialFilter, editedText);
+    }
+  }, [_trialFilter, auth.user.user?.email, storageEngine, trrackId]);
+
+  const { value: onlineTranscriptList, status: transcriptStatus } = useAsync(getTranscript, [storageEngine, participant?.participantId, _trialFilter, auth.user.user?.email]);
+
+  useEffect(() => {
+    if (onlineTranscriptList) {
+      _setTranscriptList(onlineTranscriptList);
+    }
+  }, [onlineTranscriptList, transcriptStatus]);
 
   const allPartIds = useMemo(() => [...inPersonIds, ...prolificIds], []);
 
@@ -165,19 +192,20 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
       return;
     }
 
-    if (trialFilterAnswersName && participant && trrackForTrial.current) {
+    if (trialFilterAnswersName && participant && trrackForTrial.current && !mini) {
       storeDispatch(saveAnalysisState(trrackForTrial.current.getState(participant.answers[trialFilterAnswersName].provenanceGraph?.nodes[node])));
 
       trrackForTrial.current.to(node);
     }
 
     setCurrentNode(node);
-  }, [participant, saveAnalysisState, storeDispatch, trialFilterAnswersName, trrackForTrial]);
+  }, [mini, participant, saveAnalysisState, storeDispatch, trialFilterAnswersName]);
 
   const setSelectedTask = useCallback((s: string) => {
-    if (s !== trialName) {
+    if (s !== trialName && !mini) {
       storeDispatch(setAnalysisTrialName(s));
       storeDispatch(saveAnalysisState(null));
+      setCurrentShownTranscription(0);
 
       const sFullName = participant ? Object.keys(participant.answers).find((key) => key.startsWith(s)) : '';
 
@@ -197,7 +225,7 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
         trrackForTrial.current = null;
       }
     }
-  }, [_setCurrentNode, participant, saveAnalysisState, setAnalysisTrialName, storeDispatch, trialName]);
+  }, [_setCurrentNode, mini, participant, saveAnalysisState, setAnalysisTrialName, storeDispatch, trialName]);
 
   useEffect(() => {
     if (trialFilter) {
@@ -205,7 +233,7 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
     }
   }, [setSelectedTask, trialFilter]);
 
-  const timeUpdate = useEvent((t: number) => {
+  const timeUpdate = useEvent((t: number, dispatch = true) => {
     // check if were on the next task. If so, navigate to the next task
     if (participant && trialName && trialFilterAnswersName && (participant.answers[trialFilterAnswersName].endTime - participant.answers.audioTest_2.startTime) / 1000 < t) {
       const seq = getSequenceFlatMap(participant.sequence);
@@ -217,6 +245,10 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
     if (participant && trialName) {
       const startTime = (trialFilterAnswersName ? participant.answers[trialFilterAnswersName].startTime : participant.answers.audioTest_2.startTime);
       setPlayTime(t * 1000 + startTime);
+    }
+
+    if (dispatch) {
+      storeDispatch(setAnalysisWaveformTime(t));
     }
   });
 
@@ -231,7 +263,7 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
               .fetchAudio(...urls)
               .then((buffers) => crunker.concatAudio(buffers))
               .then((merged) => crunker.export(merged, 'audio/mp3'))
-              .then((output) => waveSurfer.loadBlob(output.blob).then(() => setWaveSurferLoading(false)))
+              .then((output) => waveSurfer.loadBlob(output.blob).then(() => { setWaveSurferLoading(false); }))
               .catch((error) => {
                 throw new Error(error);
               });
@@ -244,18 +276,18 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
     [config.tasksToNotRecordAudio, participant, storageEngine, timeUpdate, trialFilter, trrackId],
   );
 
-  const wavesurfer = useWavesurfer({ container: waveSurferDiv.current!, plugins: [], onMount: handleWSMount });
+  const plugins = useMemo(() => [], []);
 
-  useEffect(() => {
-    handleWSMount(wavesurfer);
-  }, [handleWSMount, participant, wavesurfer]);
+  const wavesurfer = useWavesurfer({
+    container: waveSurferDiv.current!, plugins, onMount: handleWSMount, progressColor: 'cornflowerblue', waveColor: 'lightgray',
+  } as any);
 
   const _setPlayTime = useCallback((n: number, percent: number) => {
     setPlayTime(n);
 
     if (wavesurfer && percent) {
       setTimeout(() => {
-        wavesurfer?.seekTo(percent);
+        wavesurfer.seekTo(percent);
       });
     }
   }, [setPlayTime, wavesurfer]);
@@ -272,6 +304,16 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
     }
   }, [wavesurfer]);
 
+  useEffect(() => {
+    timeUpdate(analysisWaveformTime, false);
+
+    if (wavesurfer) {
+      setTimeout(() => {
+        wavesurfer.setTime(analysisWaveformTime);
+      });
+    }
+  }, [analysisWaveformTime, timeUpdate, wavesurfer]);
+
   const xScale = useMemo(() => {
     if (!participant) {
       return null;
@@ -285,6 +327,10 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
 
     return scale;
   }, [participant, trialFilterAnswersName, width]);
+
+  useEffect(() => {
+    handleWSMount(wavesurfer);
+  }, [handleWSMount, participant, wavesurfer]);
 
   const clickNextNode = useCallback((node: string | undefined) => {
     if (!node) {
@@ -329,7 +375,10 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
               <Select
                 style={{ width: '300px' }}
                 value={participant?.participantId}
-                onChange={(e) => navigate(`../../${trialFilter ? '../' : ''}${e}/ui/reviewer-${trialFilter || ''}`, { relative: 'path' })}
+                onChange={(e) => {
+                  storeDispatch(setAnalysisParticipantName(e));
+                  navigate(`../../${trialFilter ? '../' : ''}${e}/ui/reviewer-${trialFilter || ''}`, { relative: 'path' });
+                }}
                 data={[...inPersonIds, ...prolificIds]}
               />
               <Select
@@ -357,10 +406,10 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
                 ml={participant && xScale ? xScale(participant.answers.audioTest_2.startTime) : 0}
                 mr={participant && xScale ? xScale(participant.answers['post-study-survey_13'].startTime) : 0}
                 style={{
-                  WebkitBoxSizing: 'border-box', width: `${participant && xScale ? xScale(participant.answers['post-study-survey_13'].startTime) - xScale(participant.answers.audioTest_2.startTime) : 0}px`,
+                  overflow: 'visible', width: `${participant && !trialFilter ? xScale(participant.answers['post-study-survey_13'].startTime) - xScale(participant.answers.audioTest_2.startTime) : (xScale.range()[1] - xScale.range()[0])}px`,
                 }}
               >
-                <WaveSurferContext.Provider value={wavesurfer} key={participant.participantId}>
+                <WaveSurferContext.Provider value={wavesurfer}>
                   <WaveForm id="waveform" />
                 </WaveSurferContext.Provider>
                 {waveSurferLoading ? <Loader /> : null}
@@ -376,9 +425,11 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
           <ActionIcon variant="subtle"><IconArrowRight onClick={() => clickNextNode(trrackForTrial.current?.current.children[0])} /></ActionIcon>
         </Group>
 
-        <Stack>
-          {participant && !mini ? <TextEditor transcriptList={transcriptList} setTranscriptList={setTranscriptList} setCurrentShownTranscription={setCurrentShownTranscription} currentShownTranscription={currentShownTranscription} participant={participant} playTime={playTime} setTranscriptLines={setTranscriptLines as any} /> : null}
-        </Stack>
+        { trialFilter ? (
+          <Stack>
+            {participant && onlineTranscriptList && transcriptList && !mini ? <TextEditor transcriptList={transcriptList} setTranscriptList={setTranscriptList} setCurrentShownTranscription={setCurrentShownTranscription} currentShownTranscription={currentShownTranscription} participant={participant} playTime={playTime} setTranscriptLines={setTranscriptLines as any} /> : null}
+          </Stack>
+        ) : null}
       </Stack>
     </Group>
   );

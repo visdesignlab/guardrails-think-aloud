@@ -98,7 +98,7 @@ export function Violin({
     const binnedPartialTable = binnedTable.derive({ ids: escape((d: any) => d.ids.filter((id: any) => filteredIds.has(id))), count: escape((d: any) => d.ids.filter((id: any) => filteredIds.has(id)).length) })
       .orderby('group');
 
-    const widthScale = d3.scaleLinear([0, xScale.bandwidth() / 2]).domain([0, d3.max<number>(binnedTable.array('count'))!]);
+    const widthScale = d3.scaleLinear([0, xScale.bandwidth() / 2]).domain([0, d3.max<number>(binnedTable.array('count') as number[])!]);
 
     const linePositive = d3.line((d) => widthScale(d[1]) + (xScale.bandwidth() / 2), (d) => yScale(d[0])).curve(d3.curveBasis);
     const lineNegative = d3.line((d) => (xScale.bandwidth() / 2) - widthScale(d[1]), (d) => yScale(d[0])).curve(d3.curveBasis);

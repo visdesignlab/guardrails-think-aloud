@@ -47,7 +47,7 @@ export function Bar({
       return null;
     }
 
-    return d3.scaleBand([margin.top, height + margin.top]).domain(fullGroupedTable.array(parameters.category).sort()).paddingInner(0.1);
+    return d3.scaleBand([margin.top, height + margin.top]).domain(fullGroupedTable.array(parameters.category).sort() as string[]).paddingInner(0.1);
   }, [fullGroupedTable, height, parameters.category]);
 
   const rects = useMemo(() => {

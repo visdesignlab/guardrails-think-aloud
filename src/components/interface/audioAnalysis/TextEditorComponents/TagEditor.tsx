@@ -15,7 +15,7 @@ export function TagEditor({ createTagCallback, editTagCallback, tags } : {create
     <Stack style={{ width: '300px' }} gap="xs">
       {tags.length === 0 ? <Text color="dimmed">No tags found. Create new tags below.</Text> : null}
       {tags.map((t) => (
-        <Group justify="space-between" key={t.name}>
+        <Group justify="space-between" key={t.id}>
           <Group>
             <ColorSwatch color={t.color} />
             <Text>{t.name}</Text>
@@ -25,7 +25,7 @@ export function TagEditor({ createTagCallback, editTagCallback, tags } : {create
               <IconEdit color="lightgray" />
             </Popover.Target>
             <Popover.Dropdown>
-              <AddTagDropdown editTag currentNames={tags.map((tag) => tag.name)} addTagCallback={(tag: Tag) => { editTagCallback(t, tag); }} editableTag={t} />
+              <AddTagDropdown editTag currentNames={tags.map((tag) => tag.name)} addTagCallback={(tag: Tag) => { editTagCallback(t, { ...tag, id: t.id }); }} editableTag={t} />
             </Popover.Dropdown>
           </Popover>
         </Group>

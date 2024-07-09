@@ -153,12 +153,12 @@ export function BrushPlot({ parameters, setAnswer, provenanceState }: StimulusPa
 
     const newSelection = selType !== 'clear' ? _filteredTable?.array(parameters.ids) : [];
 
-    setBrushState({ ...brushState, [id]: newState, selection: newSelection });
+    setBrushState({ ...brushState, [id]: newState, selection: newSelection as string[] });
 
     if (selType === 'drag' || selType === 'handle' || selType === 'click') {
       debouncedCallback(selType, { ...brushState, [id]: newState, selection: newSelection });
     } else if (selType === 'clear') {
-      trrack.apply('Clear Brush', actions.clearBrush({ ...brushState, [id]: newState, selection: newSelection }));
+      trrack.apply('Clear Brush', actions.clearBrush({ ...brushState, [id]: newState, selection: newSelection as string[] }));
     }
 
     setFilteredTable(_filteredTable);

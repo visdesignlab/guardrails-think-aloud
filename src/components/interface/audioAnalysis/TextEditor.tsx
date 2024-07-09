@@ -5,7 +5,7 @@ import {
 } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  Group, Popover, Stack, Text,
+  Group, Loader, Popover, Stack, Text,
 } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import { ParticipantData } from '../../../storage/types';
@@ -19,6 +19,17 @@ import { TagEditor } from './TextEditorComponents/TagEditor';
 import { useStorageEngine } from '../../../storage/storageEngineHooks';
 import { getSequenceFlatMap } from '../../../utils/getSequenceFlatMap';
 import { useCurrentComponent } from '../../../routes/utils';
+import { StorageEngine } from '../../../storage/engines/StorageEngine';
+import { useAsync } from '../../../store/hooks/useAsync';
+import { useAuth } from '../../../store/hooks/useAuth';
+
+async function getTags(storageEngine: StorageEngine | undefined) {
+  if (storageEngine) {
+    return await storageEngine.getTags();
+  }
+
+  return [];
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function TextEditor({
@@ -26,14 +37,22 @@ export function TextEditor({
 } : {participant: ParticipantData, playTime: number, setTranscriptLines: (lines: TranscriptLinesWithTimes[]) => void; setCurrentShownTranscription: (i: number) => void; currentShownTranscription: number, transcriptList: EditedText[], setTranscriptList: (e: EditedText[]) => void}) {
   const [transcription, setTranscription] = useState<TranscribedAudio | null>(null);
 
+  const auth = useAuth();
+
   const { trrackId, studyId, index: taskIndex } = useParams();
   const _trialFilter = useCurrentComponent();
 
   const trialFilter = taskIndex ? _trialFilter : null;
 
-  const [tags, setTags] = useState<Tag[]>([]);
-
   const { storageEngine } = useStorageEngine();
+
+  const { value: tags, execute: pullTags } = useAsync(getTags, [storageEngine]);
+
+  const setTags = useCallback((_tags: Tag[]) => {
+    if (storageEngine) {
+      storageEngine.saveTags(_tags).then(() => pullTags(storageEngine));
+    }
+  }, [pullTags, storageEngine]);
 
   const config = useStudyConfig();
 
@@ -77,7 +96,7 @@ export function TextEditor({
     const newEditedList = structuredClone(transcriptList);
     newEditedList[index - 1].text = transcriptList[index - 1].text + transcriptList[index].text;
     newEditedList[index - 1].transcriptMappingEnd = transcriptList[index].transcriptMappingEnd;
-    newEditedList[index - 1].selectedTags = [...transcriptList[index - 1].selectedTags, ...transcriptList[index].selectedTags.filter((tag) => !transcriptList[index - 1].selectedTags.find((prevTags) => prevTags.name === tag.name))];
+    newEditedList[index - 1].selectedTags = [...transcriptList[index - 1].selectedTags, ...transcriptList[index].selectedTags.filter((tag) => !transcriptList[index - 1].selectedTags.find((prevTags) => prevTags.id === tag.id))];
 
     newEditedList.splice(index, 1);
 
@@ -118,6 +137,10 @@ export function TextEditor({
   useEffect(() => {
     const lines:TranscriptLinesWithTimes[] = [];
 
+    if (transcription && transcriptList.length > transcription.results.length) {
+      return;
+    }
+
     transcriptList.forEach((l, i) => {
       if (transcription && (i === 0 || l.transcriptMappingStart !== transcriptList[i - 1].transcriptMappingStart)) {
         lines.push({
@@ -150,18 +173,20 @@ export function TextEditor({
 
         setTranscription({ results: newTranscription });
 
-        setTranscriptList(newTranscription.map((t, i) => ({
-          transcriptMappingStart: i,
-          transcriptMappingEnd: i,
-          text: t.alternatives[0].transcript?.trim() || '',
-          selectedTags: [],
-          annotation: '',
-        })));
+        if (transcriptList.length === 0) {
+          setTranscriptList(newTranscription.map((t, i) => ({
+            transcriptMappingStart: i,
+            transcriptMappingEnd: i,
+            text: t.alternatives[0].transcript?.trim() || '',
+            selectedTags: [],
+            annotation: '',
+          })));
+        }
 
         setCurrentShownTranscription(0);
       });
     }
-  }, [storageEngine, studyId, trrackId, config.tasksToNotRecordAudio, participant, trialFilter, setTranscriptList, setCurrentShownTranscription]);
+  }, [storageEngine, studyId, trrackId, config.tasksToNotRecordAudio, participant, trialFilter, setTranscriptList, setCurrentShownTranscription, transcriptList.length]);
 
   // Update the current transcription based on the playTime.
   // TODO:: this is super unperformant, but I don't have a solution atm. think about it harder
@@ -194,7 +219,11 @@ export function TextEditor({
   }, [currentShownTranscription, participant, playTime, setCurrentShownTranscription, transcription, trialFilterAnswersName]);
 
   const editTagCallback = useCallback((oldTag: Tag, newTag: Tag) => {
-    const tagIndex = tags.findIndex((t) => t.name === oldTag.name);
+    if (!tags) {
+      return;
+    }
+
+    const tagIndex = tags.findIndex((t) => t.id === oldTag.id);
     const tagsCopy = Array.from(tags);
     tagsCopy[tagIndex] = newTag;
 
@@ -202,50 +231,56 @@ export function TextEditor({
 
     // loop over and change all tags. Will need to do this smarter once we have it hooked up to firebase
     newTranscriptList.forEach((t) => {
-      t.selectedTags = t.selectedTags.map((tag) => (tag.name === oldTag.name ? newTag : tag));
+      t.selectedTags = t.selectedTags.map((tag) => (tag.id === oldTag.id ? newTag : tag));
     });
 
     setTranscriptList(newTranscriptList);
 
     setTags(tagsCopy);
-  }, [setTranscriptList, tags, transcriptList]);
+  }, [setTags, setTranscriptList, tags, transcriptList]);
 
   return (
     <Stack gap={0}>
-      <Group mb="xl" justify="space-between" wrap="nowrap">
+      <Group mb="sm" justify="space-between" wrap="nowrap">
         <Text style={{ flexGrow: 1, textAlign: 'center' }}>Transcript</Text>
         <Popover>
           <Popover.Target>
-            <Group justify="center" style={{ width: '300px', cursor: 'pointer' }}>
-              <IconPlus />
-              <Text>Tags</Text>
-
-            </Group>
+            <Stack justify="center" style={{ width: '300px', cursor: 'pointer' }}>
+              <Group>
+                <IconPlus />
+                <Text>Tags</Text>
+              </Group>
+              <Text ta="center" style={{ justifyContent: 'end', alignContent: 'end' }} c="dimmed">{auth.user.user?.email || ''}</Text>
+            </Stack>
           </Popover.Target>
-          <Popover.Dropdown>
-            <TagEditor createTagCallback={(t: Tag) => { setTags([...tags, t]); }} editTagCallback={editTagCallback} tags={tags} />
-          </Popover.Dropdown>
+          {tags
+            ? (
+              <Popover.Dropdown>
+                <TagEditor createTagCallback={(t: Tag) => { setTags([...tags, t]); }} editTagCallback={editTagCallback} tags={tags} />
+              </Popover.Dropdown>
+            ) : <Loader />}
         </Popover>
       </Group>
-      {transcriptList.map((line, i) => (
-        <IconComponent
-          annotation={line.annotation}
-          setAnnotation={(val) => setAnnotationCallback(i, val)}
-          addRef={(ref) => { textRefs.current[i] = ref; }}
-          onSelectTags={(newTags: Tag[]) => addTagCallback(i, newTags)}
-          addRowCallback={(textIndex) => addRowCallback(i, textIndex)}
-          deleteRowCallback={() => deleteRowCallback(i)}
-          onTextChange={((val) => textChangeCallback(i, val))}
-          tags={tags}
-          selectedTags={line.selectedTags}
-          addTag={(t: Tag) => { setTags([...tags, t]); addTagCallback(i, [...line.selectedTags, t]); }}
-          text={line.text}
-          key={i}
-          start={line.transcriptMappingStart}
-          end={line.transcriptMappingEnd}
-          current={currentShownTranscription === null ? 0 : currentShownTranscription}
-        />
-      ))}
+      <Stack gap={2}>
+        {tags ? transcriptList.map((line, i) => (
+          <IconComponent
+            annotation={line.annotation}
+            setAnnotation={(val) => setAnnotationCallback(i, val)}
+            addRef={(ref) => { textRefs.current[i] = ref; }}
+            onSelectTags={(newTags: Tag[]) => addTagCallback(i, newTags)}
+            addRowCallback={(textIndex) => addRowCallback(i, textIndex)}
+            deleteRowCallback={() => deleteRowCallback(i)}
+            onTextChange={((val) => textChangeCallback(i, val))}
+            tags={tags}
+            selectedTags={line.selectedTags}
+            text={line.text}
+            key={i}
+            start={line.transcriptMappingStart}
+            end={line.transcriptMappingEnd}
+            current={currentShownTranscription === null ? 0 : currentShownTranscription}
+          />
+        )) : <Loader />}
+      </Stack>
     </Stack>
   );
 }

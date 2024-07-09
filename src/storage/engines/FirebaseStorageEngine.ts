@@ -102,21 +102,41 @@ export class FirebaseStorageEngine extends StorageEngine {
   }
 
   async getTags(): Promise<Tag[]> {
-    throw new Error('Method not implemented.');
+    const tagsRef = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/tags/tags`);
+
+    const tags: Tag[] = await this._getFromFirebaseStorageByRef(tagsRef, 'config') as unknown as Tag[];
+
+    return Promise.resolve(tags);
   }
 
-  async saveEditedTranscript(participantId: string, transcript: EditedText[]): Promise<void> {
-    const storageRef = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/${participantId}`);
+  async saveEditedTranscript(participantId: string, authId: string, taskId: string, transcript: EditedText[]): Promise<void> {
+    const taglessTranscript = transcript.map((line) => ({ ...line, selectedTags: line.selectedTags.map((tag) => tag.id) }));
 
-    const blob = new Blob([JSON.stringify(transcript)], {
+    const storageRef = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/${authId}/${participantId}/${taskId}`);
+
+    const blob = new Blob([JSON.stringify(taglessTranscript)], {
       type: 'application/json',
     });
 
     await uploadBytes(storageRef, blob);
   }
 
-  getEditedTranscript(participantId: string): Promise<EditedText[]> {
-    throw new Error('Method not implemented.');
+  async getEditedTranscript(participantId: string, authId: string, taskId: string): Promise<EditedText[]> {
+    const transcriptRef = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/${authId}/${participantId}/${taskId}`);
+
+    const transcript: EditedText[] = await this._getFromFirebaseStorageByRef(transcriptRef, 'config') as unknown as EditedText[];
+
+    if (!Array.isArray(transcript)) {
+      return [];
+    }
+
+    const tagsRef = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/tags/tags`);
+
+    const tags: Tag[] = await this._getFromFirebaseStorageByRef(tagsRef, 'config') as unknown as Tag[];
+
+    const transcriptWithTags = transcript.map((line) => ({ ...line, selectedTags: line.selectedTags.map((tagName) => tags.find((t) => tagName as unknown as string === t.id)!) }));
+
+    return Promise.resolve(transcriptWithTags);
   }
 
   private RECAPTCHAV3TOKEN = import.meta.env.VITE_RECAPTCHAV3TOKEN;
