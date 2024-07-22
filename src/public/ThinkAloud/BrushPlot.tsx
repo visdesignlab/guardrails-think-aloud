@@ -18,6 +18,7 @@ import { StimulusParams } from '../../store/types';
 import { BrushParams, BrushState, SelectionType } from './types';
 import { Histogram } from './Histogram';
 import { Violin } from './Violin';
+import { PREFIX } from '../../utils/Prefix';
 
 export function BrushPlot({ parameters, setAnswer, provenanceState }: StimulusParams<BrushParams>) {
   const [filteredTable, setFilteredTable] = useState<ColumnTable | null>(null);
@@ -34,7 +35,7 @@ export function BrushPlot({ parameters, setAnswer, provenanceState }: StimulusPa
 
   // load data
   useEffect(() => {
-    d3.csv(`/ThinkAloud/data/${parameters.dataset}.csv`).then((_data) => {
+    d3.csv(`${PREFIX}ThinkAloud/data/${parameters.dataset}.csv`).then((_data) => {
       setData(_data);
     });
   }, [parameters]);

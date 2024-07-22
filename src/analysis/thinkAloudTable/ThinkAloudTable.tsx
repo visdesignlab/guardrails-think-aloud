@@ -34,6 +34,7 @@ import { useAsync } from '../../store/hooks/useAsync';
 import { TagSelector } from '../../components/interface/audioAnalysis/TextEditorComponents/TagSelector';
 import { deepCopy } from '../../utils/deepCopy';
 import { TagEditor } from '../../components/interface/audioAnalysis/TextEditorComponents/TagEditor';
+import { PREFIX } from '../../utils/Prefix';
 
 export interface TableData {
   timeSpent: number,
@@ -323,7 +324,7 @@ export function ThinkAloudTable({
             size="12px"
             component={Link}
             target="_blank"
-            to={`/ThinkAloud/analysis/${cell.getValue()}/reviewer-${currentTask}`}
+            to={`${PREFIX}ThinkAloud/analysis/${cell.getValue()}/reviewer-${currentTask}`}
           >
             {cell.getValue() as string}
           </Anchor>

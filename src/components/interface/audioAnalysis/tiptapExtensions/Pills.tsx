@@ -4,6 +4,7 @@ import {
 import * as d3 from 'd3';
 import { Link } from 'react-router-dom';
 import { Tag } from '../types';
+import { PREFIX } from '../../../../utils/Prefix';
 
 export function Pills({
   selectedTags, removeFunc, isLink = false, participantId = '', currentTask = '',
@@ -18,7 +19,7 @@ export function Pills({
       <Pill
         component={isLink ? Link : null}
         // @ts-ignore
-        to={`/ThinkAloud/analysis/${participantId}/ui/reviewer-${currentTask}`}
+        to={`${PREFIX}ThinkAloud/analysis/${participantId}/ui/reviewer-${currentTask}`}
         target="_blank"
         key={tag.id + i}
         withRemoveButton={!!removeFunc}
