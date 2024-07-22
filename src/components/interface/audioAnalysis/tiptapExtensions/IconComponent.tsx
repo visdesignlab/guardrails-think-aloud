@@ -7,43 +7,22 @@ import {
 import * as d3 from 'd3';
 import { useState } from 'react';
 import { Tag } from '../types';
+import { Pills } from './Pills';
+import { TagSelector } from '../TextEditorComponents/TagSelector';
 
 export function IconComponent({
   annotation, setAnnotation, start, current, end, text, tags, selectedTags, onTextChange, deleteRowCallback, addRowCallback, onSelectTags, addRef,
-} : {annotation: string; setAnnotation: (s: string) => void; start: number, end: number, current: number, text: string, tags: Tag[], selectedTags: Tag[], onTextChange: (v: string) => void, deleteRowCallback: () => void, addRowCallback: (textIndex: number) => void, onSelectTags: (t: Tag[]) => void, addRef: (ref: HTMLInputElement) => void }) {
-  const combobox = useCombobox();
-
+} : {annotation: string; setAnnotation: (s: string) => void; start: number, end: number, current: number, text: string, tags: Tag[], selectedTags: Tag[], onTextChange: (v: string) => void, deleteRowCallback: () => void, addRowCallback: (textIndex: number) => void, onSelectTags: (t: Tag[]) => void, addRef: (ref: HTMLTextAreaElement) => void }) {
   const [annotationVal, setAnnotationVal] = useState<string>(annotation);
-
-  const handleValueSelect = (val: string) => onSelectTags([...selectedTags, tags.find((t) => t.id === val)!]);
-
-  const handleValueRemove = (val: string) => onSelectTags(selectedTags.filter((t: Tag) => t.id !== val));
-
-  const values = selectedTags.map((tag) => {
-    const lightness = d3.hsl(tag.color!).l;
-
-    return (
-      <Pill key={tag.id} withRemoveButton styles={{ root: { backgroundColor: tag.color, color: lightness > 0.7 ? 'black' : 'white' } }} onRemove={() => handleValueRemove(tag.id)}>
-        {tag.name}
-      </Pill>
-    );
-  });
-
-  const options = tags.filter((tag) => !selectedTags.find((selT) => selT.id === tag.id)).map((tag) => (
-    <Combobox.Option value={tag.id} key={tag.id}>
-      <Group gap="sm">
-        <ColorSwatch size={10} color={tag.color} />
-
-        <span>{tag.name}</span>
-      </Group>
-    </Combobox.Option>
-  ));
 
   return (
     <Group justify="space-between" style={{ width: '100%' }} wrap="nowrap">
       <Group wrap="nowrap" gap={0} style={{ width: '100%', backgroundColor: current >= start && current <= end ? 'rgba(100, 149, 237, 0.3)' : 'white' }}>
-        <TextInput
+        <Textarea
           ref={(r) => (r ? addRef(r) : null)}
+          autosize
+          minRows={1}
+          maxRows={3}
           style={{ width: '100%' }}
           variant="unstyled"
           value={text}
@@ -63,32 +42,7 @@ export function IconComponent({
       </Group>
       <Group wrap="nowrap" style={{ width: '300px' }}>
         <Divider orientation="vertical" size="xs" />
-        <Combobox width={300} store={combobox} onOptionSubmit={handleValueSelect} withinPortal={false}>
-          <Combobox.DropdownTarget>
-            <PillsInput style={{ width: '400px' }} pointer onClick={() => combobox.toggleDropdown()}>
-              <Pill.Group>
-                {values.length > 0 ? (
-                  values
-                ) : (
-                  <Input.Placeholder>Add tags</Input.Placeholder>
-                )}
-
-                <Combobox.EventsTarget>
-                  <PillsInput.Field
-                    type="hidden"
-                    onBlur={() => combobox.closeDropdown()}
-                  />
-                </Combobox.EventsTarget>
-              </Pill.Group>
-            </PillsInput>
-          </Combobox.DropdownTarget>
-
-          <Combobox.Dropdown>
-            <Combobox.Options>
-              {options.length === 0 ? <Combobox.Empty>No additional tags</Combobox.Empty> : options}
-            </Combobox.Options>
-          </Combobox.Dropdown>
-        </Combobox>
+        <TagSelector onSelectTags={onSelectTags} selectedTags={selectedTags} tags={tags} />
         <Popover>
           <Popover.Target>
             <IconSticker2 style={{ color: annotation.length > 0 ? 'cornflowerblue' : 'lightgray', cursor: 'pointer' }} />

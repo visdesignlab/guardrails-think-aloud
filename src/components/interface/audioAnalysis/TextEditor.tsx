@@ -25,7 +25,7 @@ import { useAuth } from '../../../store/hooks/useAuth';
 
 async function getTags(storageEngine: StorageEngine | undefined) {
   if (storageEngine) {
-    return await storageEngine.getTags();
+    return await storageEngine.getTags('text');
   }
 
   return [];
@@ -50,13 +50,13 @@ export function TextEditor({
 
   const setTags = useCallback((_tags: Tag[]) => {
     if (storageEngine) {
-      storageEngine.saveTags(_tags).then(() => pullTags(storageEngine));
+      storageEngine.saveTags(_tags, 'text').then(() => pullTags(storageEngine));
     }
   }, [pullTags, storageEngine]);
 
   const config = useStudyConfig();
 
-  const textRefs = useRef<HTMLInputElement[]>([]);
+  const textRefs = useRef<HTMLTextAreaElement[]>([]);
 
   const trialFilterAnswersName = useMemo(() => {
     if (!trialFilter || !participant) {
@@ -243,25 +243,11 @@ export function TextEditor({
     <Stack gap={0}>
       <Group mb="sm" justify="space-between" wrap="nowrap">
         <Text style={{ flexGrow: 1, textAlign: 'center' }}>Transcript</Text>
-        <Popover>
-          <Popover.Target>
-            <Stack justify="center" style={{ width: '300px', cursor: 'pointer' }}>
-              <Group>
-                <IconPlus />
-                <Text>Tags</Text>
-              </Group>
-              <Text ta="center" style={{ justifyContent: 'end', alignContent: 'end' }} c="dimmed">{auth.user.user?.email || ''}</Text>
-            </Stack>
-          </Popover.Target>
-          {tags
-            ? (
-              <Popover.Dropdown>
-                <TagEditor createTagCallback={(t: Tag) => { setTags([...tags, t]); }} editTagCallback={editTagCallback} tags={tags} />
-              </Popover.Dropdown>
-            ) : <Loader />}
-        </Popover>
+
+        <TagEditor createTagCallback={(t: Tag) => { setTags([...(tags || []), t]); }} editTagCallback={editTagCallback} tags={tags || []} email={auth.user.user?.email || ''} />
+
       </Group>
-      <Stack gap={2}>
+      <Stack gap={5}>
         {tags ? transcriptList.map((line, i) => (
           <IconComponent
             annotation={line.annotation}

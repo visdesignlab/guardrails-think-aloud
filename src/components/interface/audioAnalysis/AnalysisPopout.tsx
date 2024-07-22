@@ -192,17 +192,17 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
       return;
     }
 
-    if (trialFilterAnswersName && participant && trrackForTrial.current && !mini) {
+    if (trialFilterAnswersName && participant && trrackForTrial.current) {
       storeDispatch(saveAnalysisState(trrackForTrial.current.getState(participant.answers[trialFilterAnswersName].provenanceGraph?.nodes[node])));
 
       trrackForTrial.current.to(node);
     }
 
     setCurrentNode(node);
-  }, [mini, participant, saveAnalysisState, storeDispatch, trialFilterAnswersName]);
+  }, [participant, saveAnalysisState, storeDispatch, trialFilterAnswersName]);
 
   const setSelectedTask = useCallback((s: string) => {
-    if (s !== trialName && !mini) {
+    if (!mini) {
       storeDispatch(setAnalysisTrialName(s));
       storeDispatch(saveAnalysisState(null));
       setCurrentShownTranscription(0);
@@ -225,7 +225,7 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
         trrackForTrial.current = null;
       }
     }
-  }, [_setCurrentNode, mini, participant, saveAnalysisState, setAnalysisTrialName, storeDispatch, trialName]);
+  }, [_setCurrentNode, mini, participant, saveAnalysisState, setAnalysisTrialName, storeDispatch]);
 
   useEffect(() => {
     if (trialFilter) {
@@ -235,14 +235,14 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
 
   const timeUpdate = useEvent((t: number, dispatch = true) => {
     // check if were on the next task. If so, navigate to the next task
-    if (participant && trialName && trialFilterAnswersName && (participant.answers[trialFilterAnswersName].endTime - participant.answers.audioTest_2.startTime) / 1000 < t) {
+    if (participant && trialFilter && trialFilterAnswersName && (participant.answers[trialFilterAnswersName].endTime - participant.answers.audioTest_2.startTime) / 1000 < t) {
       const seq = getSequenceFlatMap(participant.sequence);
-      setSelectedTask(seq[seq.indexOf(trialName) + 1]);
-    } else if (participant && trialName && trrackForTrial.current && trrackForTrial.current.current.children.length > 0 && (trrackForTrial.current.graph.backend.nodes[trrackForTrial.current.current.children[0]].createdOn - participant.answers.audioTest_2.startTime) / 1000 < t) {
+      setSelectedTask(seq[seq.indexOf(trialFilter) + 1]);
+    } else if (participant && trialFilter && trrackForTrial.current && trrackForTrial.current.current.children.length > 0 && (trrackForTrial.current.graph.backend.nodes[trrackForTrial.current.current.children[0]].createdOn - participant.answers.audioTest_2.startTime) / 1000 < t) {
       _setCurrentNode(trrackForTrial.current.current.children[0]);
     }
 
-    if (participant && trialName) {
+    if (participant && trialFilter) {
       const startTime = (trialFilterAnswersName ? participant.answers[trialFilterAnswersName].startTime : participant.answers.audioTest_2.startTime);
       setPlayTime(t * 1000 + startTime);
     }
@@ -307,7 +307,7 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
   useEffect(() => {
     timeUpdate(analysisWaveformTime, false);
 
-    if (wavesurfer) {
+    if (wavesurfer && Math.abs(wavesurfer.getCurrentTime() - analysisWaveformTime) > 0.8) {
       setTimeout(() => {
         wavesurfer.setTime(analysisWaveformTime);
       });
@@ -427,7 +427,7 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
 
         { trialFilter ? (
           <Stack>
-            {participant && onlineTranscriptList && transcriptList && !mini ? <TextEditor transcriptList={transcriptList} setTranscriptList={setTranscriptList} setCurrentShownTranscription={setCurrentShownTranscription} currentShownTranscription={currentShownTranscription} participant={participant} playTime={playTime} setTranscriptLines={setTranscriptLines as any} /> : null}
+            {participant && onlineTranscriptList && transcriptStatus === 'success' && transcriptList && !mini ? <TextEditor transcriptList={transcriptList} setTranscriptList={setTranscriptList} setCurrentShownTranscription={setCurrentShownTranscription} currentShownTranscription={currentShownTranscription} participant={participant} playTime={playTime} setTranscriptLines={setTranscriptLines as any} /> : !mini ? <Loader /> : null}
           </Stack>
         ) : null}
       </Stack>

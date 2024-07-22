@@ -148,6 +148,8 @@ export async function studyStoreCreator(
     },
   );
 
+  initMessageListener(store);
+
   initStateWithPrevTab(store);
 
   return { store, actions: storeSlice.actions };

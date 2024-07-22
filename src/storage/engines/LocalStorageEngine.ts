@@ -5,9 +5,17 @@ import { ParticipantData } from '../types';
 import { ParticipantMetadata, Sequence, StoredAnswer } from '../../store/types';
 import { hash } from './utils';
 import { StudyConfig } from '../../parser/types';
-import { EditedText, Tag } from '../../components/interface/audioAnalysis/types';
+import { EditedText, ParticipantTags, Tag } from '../../components/interface/audioAnalysis/types';
 
 export class LocalStorageEngine extends StorageEngine {
+  saveAllParticipantAndTaskTags(tags: Record<string, ParticipantTags>): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
+  getAllParticipantAndTaskTags(): Promise<Record<string, ParticipantTags>> {
+    throw new Error('Method not implemented.');
+  }
+
   saveTags(transcript: Tag[]): Promise<void> {
     throw new Error('Method not implemented.');
   }

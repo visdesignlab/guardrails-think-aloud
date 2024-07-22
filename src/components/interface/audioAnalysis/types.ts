@@ -14,6 +14,16 @@ export interface Tag {
     id: string
 }
 
+export interface ParticipantTags {
+    partTags: Tag[],
+    taskTags: Record<string, Tag[]>
+}
+
+export interface StoredParticipantTags {
+    partTags: string[],
+    taskTags: Record<string, string[]>
+}
+
 export interface EditedText {
     transcriptMappingStart: number;
     transcriptMappingEnd: number;

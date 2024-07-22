@@ -32,6 +32,10 @@ export function TranscriptLines({
             const startLoc = xScale(startTime + line.start * 1000);
             const endLoc = xScale(startTime + line.end * 1000);
 
+            if (!tag) {
+              return null;
+            }
+
             return (
               <foreignObject key={tag.name} x={startLoc + ((endLoc - startLoc) / line.tags.length) * (i + 0.5) - 6 + (((-(topTags.length - 1) * 15) / 2) + (tagIndex) * 15)} y={30} height="20px" width="20px">
                 <Tooltip label={tag.name} withArrow arrowSize={6}><ColorSwatch size={12} color={tag.color} /></Tooltip>

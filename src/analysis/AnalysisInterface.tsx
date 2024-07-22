@@ -3,6 +3,7 @@ import {
   Title,
   Tooltip,
   Alert,
+  Box,
 } from '@mantine/core';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -19,6 +20,7 @@ import { useStorageEngine } from '../storage/storageEngineHooks';
 import { ParticipantStatusBadges } from './components/interface/ParticipantStatusBadges';
 import ManageAccordion from './management/ManageAccordion';
 import { useAuth } from '../store/hooks/useAuth';
+import { ThinkAloudTable } from './thinkAloudTable/ThinkAloudTable';
 
 export function AnalysisInterface(props: { globalConfig: GlobalConfig; }) {
   const { globalConfig } = props;
@@ -56,10 +58,10 @@ export function AnalysisInterface(props: { globalConfig: GlobalConfig; }) {
   }, [expData]);
 
   return (
-    <AppShell>
+    <AppShell style={{ height: '100%' }}>
       <AppHeader studyIds={props.globalConfig.configsList} />
       <AppShell.Main>
-        <Container fluid style={{ height: '100%' }}>
+        <Box p="sm" style={{ height: '100%', minHeight: '100%', width: '100%' }}>
           <LoadingOverlay visible={loading} />
 
           <Flex direction="row" align="center">
@@ -78,6 +80,8 @@ export function AnalysisInterface(props: { globalConfig: GlobalConfig; }) {
               <Tooltip label="Coming soon" position="bottom">
                 <Tabs.Tab value="replay" leftSection={<IconPlayerPlay size={16} />} disabled>Participant Replay</Tabs.Tab>
               </Tooltip>
+              <Tabs.Tab value="thinkAloud" leftSection={<IconPlayerPlay size={16} />}>Think Aloud</Tabs.Tab>
+
               <Tabs.Tab value="manage" leftSection={<IconSettings size={16} />} disabled={!user.isAdmin}>Manage</Tabs.Tab>
             </Tabs.List>
             <Tabs.Panel value="table" pt="xs">
@@ -90,11 +94,14 @@ export function AnalysisInterface(props: { globalConfig: GlobalConfig; }) {
             <Tabs.Panel value="replay" pt="xs">
               Replay Tab Content
             </Tabs.Panel>
+            <Tabs.Panel value="thinkAloud" pt="xs">
+              {studyConfig && <ThinkAloudTable completed={completed} studyConfig={studyConfig} />}
+            </Tabs.Panel>
             <Tabs.Panel value="manage" pt="xs">
               {studyId && user.isAdmin ? <ManageAccordion studyId={studyId} refresh={getData} /> : <Container mt={20}><Alert title="Unauthorized Access" variant="light" color="red" icon={<IconInfoCircle />}>You are not authorized to manage the data for this study.</Alert></Container>}
             </Tabs.Panel>
           </Tabs>
-        </Container>
+        </Box>
       </AppShell.Main>
     </AppShell>
   );

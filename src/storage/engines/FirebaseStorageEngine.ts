@@ -26,7 +26,10 @@ import {
 } from '../../store/types';
 import { hash } from './utils';
 import { StudyConfig } from '../../parser/types';
-import { EditedText, Tag } from '../../components/interface/audioAnalysis/types';
+import {
+  EditedText, ParticipantTags, StoredParticipantTags, Tag,
+} from '../../components/interface/audioAnalysis/types';
+import { deepCopy } from '../../utils/deepCopy';
 
 const allParticipants = ['participant1',
   'participant2',
@@ -91,8 +94,56 @@ function isParticipantData(obj: unknown): obj is ParticipantData {
 }
 
 export class FirebaseStorageEngine extends StorageEngine {
-  async saveTags(tags: Tag[]): Promise<void> {
-    const storageRef = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/tags/tags`);
+  async saveAllParticipantAndTaskTags(tags: Record<string, ParticipantTags>): Promise<void> {
+    const newTags = deepCopy(tags);
+
+    Object.values(newTags).forEach((allTags) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      allTags.partTags = allTags.partTags.map((t) => t.id) as any;
+      Object.values(allTags.taskTags).forEach((taskTags) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, no-param-reassign
+        taskTags = taskTags.map((t) => t.id) as any;
+      });
+    });
+
+    const storageRef = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/_participantTags`);
+
+    const blob = new Blob([JSON.stringify(newTags)], {
+      type: 'application/json',
+    });
+
+    await uploadBytes(storageRef, blob);
+  }
+
+  async getAllParticipantAndTaskTags(): Promise<Record<string, ParticipantTags>> {
+    const transcriptRef = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/_participantTags`);
+
+    const allTags: Record<string, StoredParticipantTags> = await this._getFromFirebaseStorageByRef(transcriptRef, 'config') as unknown as Record<string, StoredParticipantTags>;
+
+    const partTagsRef = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/tags/participant/tags`);
+
+    const partTags: Tag[] = await this._getFromFirebaseStorageByRef(partTagsRef, 'config') as unknown as Tag[];
+
+    const taskTagsRef = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/tags/task/tags`);
+
+    const taskTags: Tag[] = await this._getFromFirebaseStorageByRef(taskTagsRef, 'config') as unknown as Tag[];
+
+    Object.values(allTags).forEach((_allTags) => {
+      // @ts-ignore
+      _allTags.partTags = _allTags.partTags.map((t) => (partTags ? partTags.find((_t) => _t.id === t)! : t));
+      Object.values(_allTags.taskTags).forEach((_taskTags) => {
+        // @ts-ignore
+        // eslint-disable-next-line no-param-reassign
+        _taskTags = _taskTags.map((t) => (taskTags ? taskTags.find((_t) => _t.id === t)! : t));
+      });
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return Promise.resolve(allTags as any);
+  }
+
+  async saveTags(tags: Tag[], type: 'participant' | 'task' | 'text'): Promise<void> {
+    const storageRef = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/tags/${type}/tags`);
 
     const blob = new Blob([JSON.stringify(tags)], {
       type: 'application/json',
@@ -101,16 +152,20 @@ export class FirebaseStorageEngine extends StorageEngine {
     await uploadBytes(storageRef, blob);
   }
 
-  async getTags(): Promise<Tag[]> {
-    const tagsRef = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/tags/tags`);
+  async getTags(type: 'participant' | 'task' | 'text'): Promise<Tag[]> {
+    const tagsRef = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/tags/${type}/tags`);
 
     const tags: Tag[] = await this._getFromFirebaseStorageByRef(tagsRef, 'config') as unknown as Tag[];
+
+    if (!Array.isArray(tags)) {
+      return Promise.resolve([]);
+    }
 
     return Promise.resolve(tags);
   }
 
   async saveEditedTranscript(participantId: string, authId: string, taskId: string, transcript: EditedText[]): Promise<void> {
-    const taglessTranscript = transcript.map((line) => ({ ...line, selectedTags: line.selectedTags.map((tag) => tag.id) }));
+    const taglessTranscript = transcript.map((line) => ({ ...line, selectedTags: line.selectedTags.filter((tag) => tag !== undefined).map((tag) => tag.id) }));
 
     const storageRef = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/${authId}/${participantId}/${taskId}`);
 
@@ -130,7 +185,7 @@ export class FirebaseStorageEngine extends StorageEngine {
       return [];
     }
 
-    const tagsRef = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/tags/tags`);
+    const tagsRef = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/tags/text/tags`);
 
     const tags: Tag[] = await this._getFromFirebaseStorageByRef(tagsRef, 'config') as unknown as Tag[];
 

@@ -85,6 +85,7 @@ function MetaCell(props:{metaData: ParticipantMetadata}) {
     </Table.Td>
   );
 }
+
 export function TableView({
   completed,
   inProgress,
@@ -158,14 +159,14 @@ export function TableView({
     <Table.Th key="ID">ID</Table.Th>,
     <Table.Th key="status">Status</Table.Th>,
     <Table.Th key="meta">Meta</Table.Th>,
-    ...uniqueTrials.flatMap((trial) => [
-      <Table.Th key={`header-${trial.componentName}-${trial.timesSeenInBlock}`}>{trial.componentName}</Table.Th>,
-      <Table.Th key={`header-${trial.componentName}-${trial.timesSeenInBlock}-duration`}>
-        {trial.componentName}
-        {' '}
-        Duration
-      </Table.Th>,
-    ]),
+    // ...uniqueTrials.flatMap((trial) => [
+    //   <Table.Th key={`header-${trial.componentName}-${trial.timesSeenInBlock}`}>{trial.componentName}</Table.Th>,
+    //   <Table.Th key={`header-${trial.componentName}-${trial.timesSeenInBlock}-duration`}>
+    //     {trial.componentName}
+    //     {' '}
+    //     Duration
+    //   </Table.Th>,
+    // ]),
     <Table.Th key="total-duration">Total Duration</Table.Th>,
   ];
 
@@ -197,7 +198,7 @@ export function TableView({
         </Flex>
       </Table.Td>
       {record.metadata ? <MetaCell metaData={record.metadata} /> : <Table.Td>N/A</Table.Td>}
-      {uniqueTrials.map((trial) => {
+      {/* {uniqueTrials.map((trial) => {
         const sequenceBlock = findBlockForStep(record.sequence, trial.orderPath);
         const trialData = sequenceBlock && Object.entries(record.answers)
           .sort((a, b) => {
@@ -221,7 +222,7 @@ export function TableView({
             <Table.Td>N/A</Table.Td>
           </React.Fragment>
         ));
-      })}
+      })} */}
       <DurationCell
         cellData={{
           startTime: Math.min(...Object.values(record.answers).map((a) => a.startTime)),
