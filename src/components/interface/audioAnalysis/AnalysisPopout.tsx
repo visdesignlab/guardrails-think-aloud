@@ -15,7 +15,10 @@ import Crunker from 'crunker';
 import * as d3 from 'd3';
 import { Registry, Trrack, initializeTrrack } from '@trrack/core';
 import WaveSurfer from 'wavesurfer.js';
-import { IconArrowLeft, IconArrowRight } from '@tabler/icons-react';
+import {
+  IconArrowLeft, IconArrowRight, IconPlayerPause, IconPlayerPauseFilled, IconPlayerPlay,
+  IconPlayerPlayFilled,
+} from '@tabler/icons-react';
 import { useAsync } from '../../../store/hooks/useAsync';
 import { StorageEngine } from '../../../storage/engines/StorageEngine';
 import { AllTasksTimeline } from './AllTasksTimeline';
@@ -26,11 +29,12 @@ import { useEvent } from '../../../store/hooks/useEvent';
 import { useStoreActions, useStoreDispatch, useStoreSelector } from '../../../store/store';
 import { TranscriptLines } from './TransciptLines';
 import { TextEditor } from './TextEditor';
-import { EditedText, TranscriptLinesWithTimes } from './types';
+import { EditedText, ParticipantTags, TranscriptLinesWithTimes } from './types';
 import { useStorageEngine } from '../../../storage/storageEngineHooks';
 import { getSequenceFlatMap } from '../../../utils/getSequenceFlatMap';
 import { useCurrentComponent } from '../../../routes/utils';
 import { useAuth } from '../../../store/hooks/useAuth';
+import { TagSelector } from './TextEditorComponents/TagSelector';
 
 const margin = {
   left: 5, top: 0, right: 5, bottom: 0,
@@ -50,6 +54,22 @@ async function getTranscript(storageEngine: StorageEngine | undefined, partId: s
   }
 
   return null;
+}
+
+async function getParticipantTags(trrackId: string | undefined, storageEngine: StorageEngine | undefined) {
+  if (storageEngine && trrackId) {
+    return (await storageEngine.getAllParticipantAndTaskTags());
+  }
+
+  return null;
+}
+
+async function getTags(storageEngine: StorageEngine | undefined, type: 'participant' | 'task' | 'text') {
+  if (storageEngine) {
+    return await storageEngine.getTags(type);
+  }
+
+  return [];
 }
 
 const inPersonIds = ['participant1',
@@ -124,6 +144,8 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
 
   const { value: participant, status } = useAsync(getParticipantData, [trrackId, storageEngine]);
 
+  const { value: partTags, execute: pullPartTags } = useAsync(getParticipantTags, [trrackId, storageEngine]);
+
   const { saveAnalysisState } = useStoreActions();
   const storeDispatch = useStoreDispatch();
 
@@ -139,6 +161,8 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
   const { analysisTrialName: trialName, analysisWaveformTime } = useStoreSelector((state) => state);
 
   const { setAnalysisTrialName, setAnalysisParticipantName, setAnalysisWaveformTime } = useStoreActions();
+
+  const { value: taskTags, execute: pullTaskTags } = useAsync(getTags, [storageEngine, 'task']);
 
   const [waveSurferLoading, setWaveSurferLoading] = useState<boolean>(true);
 
@@ -419,10 +443,33 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
           ) : null }
         {status === 'success' && participant && xScale ? <SingleTaskTimeline xScale={xScale} setSelectedTask={setSelectedTask} playTime={playTime - participant.answers.introduction_0.startTime} setPlayTime={_setPlayTime} isPlaying={isPlaying} setIsPlaying={_setIsPlaying} currentNode={currentNode} setCurrentNode={_setCurrentNode} participantData={participant} width={width} height={50} /> : null}
         <Group align="center" justify="center">
-          <ActionIcon variant="subtle"><IconArrowLeft onClick={() => clickNextNode((trrackForTrial.current?.current as any).parent)} /></ActionIcon>
-          <Button onClick={() => _setIsPlaying(true)}>Play</Button>
-          <Button onClick={() => _setIsPlaying(false)}>Pause</Button>
-          <ActionIcon variant="subtle"><IconArrowRight onClick={() => clickNextNode(trrackForTrial.current?.current.children[0])} /></ActionIcon>
+          {/* <ActionIcon variant="subtle"><IconArrowLeft onClick={() => clickNextNode((trrackForTrial.current?.current as any).parent)} /></ActionIcon> */}
+          <ActionIcon variant="light" size={50} onClick={() => _setIsPlaying(!isPlaying)}>{isPlaying ? <IconPlayerPauseFilled /> : <IconPlayerPlayFilled />}</ActionIcon>
+          {taskTags && partTags && trialFilter && trrackId ? (
+            <TagSelector
+              tags={taskTags || []}
+              onSelectTags={(tempTag) => {
+                if (storageEngine && partTags) {
+                  const copy = deepCopy(partTags);
+                  if (copy[trrackId as string]) {
+                    copy[trrackId].taskTags[trialFilter] = tempTag;
+                  } else {
+                    copy[trrackId] = { partTags: [], taskTags: {} };
+
+                    copy[trrackId].taskTags[trialFilter] = tempTag;
+                  }
+
+                  storageEngine.saveAllParticipantAndTaskTags(copy).then(() => {
+                    pullPartTags(trrackId, storageEngine);
+                  });
+                }
+              }}
+              selectedTags={partTags && (partTags as Record<string, ParticipantTags>)[trrackId] ? (partTags as Record<string, ParticipantTags>)[trrackId].taskTags[trialFilter] || [] : []}
+            />
+          ) : null}
+          {/* <Button onClick={() => _setIsPlaying(true)}>Play</Button>
+          <Button onClick={() => _setIsPlaying(false)}>Pause</Button> */}
+          {/* <ActionIcon variant="subtle"><IconArrowRight onClick={() => clickNextNode(trrackForTrial.current?.current.children[0])} /></ActionIcon> */}
         </Group>
 
         { trialFilter ? (

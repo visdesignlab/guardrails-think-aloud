@@ -11,6 +11,7 @@ import {
   Anchor,
   Loader,
   MenuItem,
+  ScrollArea,
 } from '@mantine/core';
 import React, {
   useCallback, useEffect, useMemo, useState,
@@ -377,7 +378,11 @@ export function ThinkAloudTable({
       {
         accessorKey: `tasks.${currentTask}.tags`,
         header: 'Tags',
-        Cell: ({ cell, row }) => <Stack gap={2}><Pills selectedTags={cell.getValue() as Tag[]} currentTask={currentTask} isLink participantId={row.getValue('id')} /></Stack>,
+        Cell: ({ cell, row }) => (
+          <ScrollArea type="auto" h={40}>
+            <Group gap={2}><Pills size="xs" selectedTags={cell.getValue() as Tag[]} currentTask={currentTask} isLink participantId={row.getValue('id')} /></Group>
+          </ScrollArea>
+        ),
         size: 150,
       },
       {
