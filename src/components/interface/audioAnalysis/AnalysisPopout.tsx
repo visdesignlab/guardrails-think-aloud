@@ -189,8 +189,10 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
   const { value: onlineTranscriptList, status: transcriptStatus } = useAsync(getTranscript, [storageEngine, participant?.participantId, _trialFilter, auth.user.user?.email]);
 
   useEffect(() => {
-    if (onlineTranscriptList) {
+    if (onlineTranscriptList && transcriptStatus === 'success') {
       _setTranscriptList(onlineTranscriptList);
+    } else {
+      _setTranscriptList(null);
     }
   }, [onlineTranscriptList, transcriptStatus]);
 
