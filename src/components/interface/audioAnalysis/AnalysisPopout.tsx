@@ -19,6 +19,7 @@ import {
   IconArrowLeft, IconArrowRight, IconPlayerPause, IconPlayerPauseFilled, IconPlayerPlay,
   IconPlayerPlayFilled,
 } from '@tabler/icons-react';
+import debounce from 'lodash.debounce';
 import { useAsync } from '../../../store/hooks/useAsync';
 import { StorageEngine } from '../../../storage/engines/StorageEngine';
 import { AllTasksTimeline } from './AllTasksTimeline';
@@ -172,12 +173,18 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
 
   const [transcriptList, _setTranscriptList] = useState<EditedText[] | null>(null);
 
+  const debouncedSave = useMemo(() => {
+    if (storageEngine && trrackId && _trialFilter) {
+      return debounce((editedText: EditedText[]) => storageEngine.saveEditedTranscript(trrackId, auth.user.user?.email || 'temp', _trialFilter, editedText), 1000, { maxWait: 5000 });
+    }
+
+    return (editedText: EditedText[]) => null;
+  }, [_trialFilter, auth.user.user?.email, storageEngine, trrackId]);
+
   const setTranscriptList = useCallback((editedText: EditedText[]) => {
     _setTranscriptList(editedText);
-    if (storageEngine && trrackId && _trialFilter) {
-      storageEngine.saveEditedTranscript(trrackId, auth.user.user?.email || 'temp', _trialFilter, editedText);
-    }
-  }, [_trialFilter, auth.user.user?.email, storageEngine, trrackId]);
+    debouncedSave(editedText);
+  }, [debouncedSave]);
 
   const { value: onlineTranscriptList, status: transcriptStatus } = useAsync(getTranscript, [storageEngine, participant?.participantId, _trialFilter, auth.user.user?.email]);
 
