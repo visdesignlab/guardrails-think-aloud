@@ -107,6 +107,8 @@ export function ThinkAloudTable({
 
   const { value: partTags, execute: pullPartTags } = useAsync(getParticipantTags, [storageEngine]);
 
+  const [fullTableData, setFullTableData] = useState<TableData[]>([]);
+
   const [tableData, setTableData] = useState<TableData[]>([]);
 
   const [filteredTags, setFilteredTags] = useState<string[]>([]);
@@ -118,32 +120,32 @@ export function ThinkAloudTable({
       return null;
     }
 
-    const extent = d3.extent(tableData.map((t) => t.tasks[currentTask].wordCount || 0)) as [number, number];
+    const extent = d3.extent(fullTableData.map((t) => t.tasks[currentTask].wordCount || 0)) as [number, number];
 
     return d3.scaleLinear([0, wordCountWidth]).domain(extent);
-  }, [currentTask, tableData, wordCountWidth]);
+  }, [currentTask, fullTableData, wordCountWidth]);
 
   const interactionCountScale = useMemo(() => {
     if (!currentTask) {
-      const extent = d3.extent(tableData.map((t) => t.interactionCount || 0)) as [number, number];
+      const extent = d3.extent(fullTableData.map((t) => t.interactionCount || 0)) as [number, number];
       return d3.scaleLinear([0, wordCountWidth]).domain(extent);
     }
 
-    const extent = d3.extent(tableData.map((t) => t.tasks[currentTask].interactionCount || 0)) as [number, number];
+    const extent = d3.extent(fullTableData.map((t) => t.tasks[currentTask].interactionCount || 0)) as [number, number];
 
     return d3.scaleLinear([0, wordCountWidth]).domain(extent);
-  }, [currentTask, tableData, wordCountWidth]);
+  }, [currentTask, fullTableData, wordCountWidth]);
 
   const timeScale = useMemo(() => {
     if (!currentTask) {
-      const extent = d3.extent(tableData.map((t) => t.timeSpent || 0)) as [number, number];
+      const extent = d3.extent(fullTableData.map((t) => t.timeSpent || 0)) as [number, number];
       return d3.scaleLinear([0, wordCountWidth]).domain(extent);
     }
 
-    const extent = d3.extent(tableData.map((t) => t.tasks[currentTask].timeSpent || 0)) as [number, number];
+    const extent = d3.extent(fullTableData.map((t) => t.tasks[currentTask].timeSpent || 0)) as [number, number];
 
     return d3.scaleLinear([0, wordCountWidth]).domain(extent);
-  }, [currentTask, tableData, wordCountWidth]);
+  }, [currentTask, fullTableData, wordCountWidth]);
 
   const setTags = useCallback((_tags: Tag[], type: 'participant' | 'task') => {
     if (storageEngine) {
@@ -195,13 +197,13 @@ export function ThinkAloudTable({
       };
     });
 
-    setTableData(allData);
-  }, [auth, completed, currentTask, filteredTags, partTags, storageEngine]);
+    setFullTableData(allData);
+  }, [auth, completed, storageEngine]);
 
   useEffect(() => {
     if (currentTask && auth.user.user) {
-      const newTable = [...tableData];
-      Promise.all(tableData.map((d, i) => getTranscript(storageEngine, d.id, currentTask, auth.user.user?.email)
+      const newTable = [...fullTableData];
+      Promise.all(fullTableData.map((d, i) => getTranscript(storageEngine, d.id, currentTask, auth.user.user?.email)
         .then((editedTranscript) => {
           if (editedTranscript && editedTranscript.length > 0) {
             const wordCount = d3.sum(editedTranscript.map((t) => t.text.length));
@@ -212,16 +214,18 @@ export function ThinkAloudTable({
           } else {
             newTable[i].tasks[currentTask].wordCount = 0;
           }
-        }))).then(() => setTableData(newTable));
+        }))).then(() => setFullTableData(newTable));
     }
+    // DO NOT ADD TABLE DATA TO THIS
   }, [auth.user.user, currentTask, storageEngine]);
 
   useEffect(() => {
     if (filteredTags.length === 0) {
+      setTableData(fullTableData);
       return;
     }
 
-    setTableData(tableData.filter((part) => {
+    setTableData(fullTableData.filter((part) => {
       if (partTags && partTags[part.id]) {
         const currPartTags = partTags[part.id].partTags;
 
@@ -230,7 +234,10 @@ export function ThinkAloudTable({
         }
         if (currentTask) {
           const currTaskTags = partTags[part.id].taskTags[currentTask];
-          if (currTaskTags.find((tag) => !!filteredTags.find((fTag) => fTag === tag.name))) {
+          if (currTaskTags && currTaskTags.find((tag) => !!(filteredTags.find((fTag) => fTag === tag.name)))) {
+            return true;
+          }
+          if (part.tasks[currentTask].tags.find((tag) => !!(filteredTags.find((fTag) => fTag === tag.name)))) {
             return true;
           }
         }
@@ -238,7 +245,7 @@ export function ThinkAloudTable({
 
       return false;
     }));
-  }, [currentTask, filteredTags]);
+  }, [currentTask, filteredTags, fullTableData, partTags]);
 
   const columns = useMemo<MRT_ColumnDef<TableData>[]>(() => {
     if (currentTask === null) {
