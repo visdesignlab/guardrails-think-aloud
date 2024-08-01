@@ -237,9 +237,11 @@ export function ThinkAloudTable({
           if (currTaskTags && currTaskTags.find((tag) => !!(filteredTags.find((fTag) => fTag === tag.name)))) {
             return true;
           }
-          if (part.tasks[currentTask].tags.find((tag) => !!(filteredTags.find((fTag) => fTag === tag.name)))) {
-            return true;
-          }
+        }
+      }
+      if (currentTask) {
+        if (part.tasks[currentTask].tags.find((tag) => !!(filteredTags.find((fTag) => fTag === tag.name)))) {
+          return true;
         }
       }
 
@@ -387,7 +389,7 @@ export function ThinkAloudTable({
         header: 'Tags',
         Cell: ({ cell, row }) => (
           <ScrollArea type="auto" h={40}>
-            <Group gap={2}><Pills size="xs" selectedTags={cell.getValue() as Tag[]} currentTask={currentTask} isLink participantId={row.getValue('id')} /></Group>
+            <Group gap={2}><Pills size="xs" selectedTags={(cell.getValue() as Tag[]).filter((tag) => (filteredTags.length > 0 ? !!(filteredTags.find((t) => t === tag.name)) : true))} currentTask={currentTask} isLink participantId={row.getValue('id')} /></Group>
           </ScrollArea>
         ),
         size: 150,
@@ -430,7 +432,7 @@ export function ThinkAloudTable({
         ),
         size: 150,
       }];
-  }, [allPartTags, currentTask, interactionCountScale, partTags, pullPartTags, setTags, storageEngine, taskTags, timeScale, wordCountScale]);
+  }, [allPartTags, currentTask, filteredTags, interactionCountScale, partTags, pullPartTags, setTags, storageEngine, taskTags, timeScale, wordCountScale]);
 
   const table = useMantineReactTable({
     columns,
