@@ -1,13 +1,14 @@
 import {
   ReactNode,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 import { Provider } from 'react-redux';
 import {
-  RouteObject, useRoutes, useSearchParams,
+  RouteObject, useLocation, useMatch, useParams, useRoutes, useSearchParams,
 } from 'react-router-dom';
-import { LoadingOverlay, Title } from '@mantine/core';
+import { AppShell, LoadingOverlay, Title } from '@mantine/core';
 import {
   GlobalConfig,
   Nullable,
@@ -18,18 +19,88 @@ import {
   StudyStoreContext,
   StudyStore,
   studyStoreCreator,
+  useStoreDispatch,
+  useStoreActions,
+  useStoreSelector,
 } from '../store/store';
 
 import ComponentController from '../controllers/ComponentController';
 import { NavigateWithParams } from '../utils/NavigateWithParams';
-import { StepRenderer } from './StepRenderer';
-import { useStorageEngine } from '../storage/storageEngineHooks';
+import { StudyEnd } from './StudyEnd';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion
 import { generateSequenceArray } from '../utils/handleRandomSequences';
+import { StepRenderer } from './StepRenderer';
+import { ProvenanceWrapper } from './interface/audioAnalysis/ProvenanceWrapper';
+import { StorageEngine } from '../storage/engines/StorageEngine';
+import { AnalysisHome } from './interface/audioAnalysis/AnalysisHome';
+import { Analysis } from './interface/audioAnalysis/Analysis';
+import { parseStudyConfig } from '../parser/parser';
+import { PREFIX } from '../utils/Prefix';
 import { getStudyConfig } from '../utils/fetchConfig';
 import { ParticipantMetadata } from '../store/types';
 import { ErrorLoadingConfig } from './ErrorLoadingConfig';
 import ResourceNotFound from '../ResourceNotFound';
 import { useAuth } from '../store/hooks/useAuth';
+import { useStorageEngine } from '../storage/storageEngineHooks';
+
+export function GenerateStudiesRoutes({ studyId, config }: {
+  studyId: Nullable<string>,
+  config: Nullable<ParsedStudyConfig>
+  }) {
+  const { sequence } = useStoreSelector((state) => state);
+
+  const routes = useMemo(() => {
+    if (studyId && config && sequence) {
+      const stepRoutes: RouteObject[] = [];
+
+      stepRoutes.push({
+        path: '/',
+        element: <NavigateWithParams to="0" replace />,
+      });
+
+      stepRoutes.push({
+        path: '/:index',
+        element: config.errors.length > 0 ? (
+          <>
+            <Title order={2} mb={8}>Error loading config</Title>
+            <ErrorLoadingConfig issues={config.errors} type="error" />
+          </>
+        ) : <ComponentController />,
+      });
+
+      stepRoutes.push({
+        path: '/analysis/:trrackId/:index/',
+        element: <ComponentController />,
+      });
+
+      stepRoutes.push({
+        path: '/analysis/:trrackId/ui/:index?/',
+        element: <AppShell header={{ height: 70 }} navbar={{ collapsed: { desktop: true, mobile: true }, width: 0, breakpoint: 'xs' }} aside={{ collapsed: { desktop: true, mobile: true }, width: 0, breakpoint: 'xs' }}><Analysis setProvState={() => null} /></AppShell>,
+      });
+
+      stepRoutes.push({
+        path: '/analysis',
+        element: <AnalysisHome />,
+      });
+
+      stepRoutes.push({
+        path: '/end',
+        element: <StudyEnd />,
+      });
+
+      const studyRoute: RouteObject = {
+        element: <StepRenderer />,
+        children: stepRoutes,
+      };
+
+      return [studyRoute];
+    }
+    return [];
+  }, [config, sequence, studyId]);
+
+  return useRoutes(routes);
+}
 
 export function Shell({ globalConfig }: {
   globalConfig: GlobalConfig;
@@ -39,15 +110,12 @@ export function Shell({ globalConfig }: {
   const [activeConfig, setActiveConfig] = useState<ParsedStudyConfig | null>(null);
   const isValidStudyId = globalConfig.configsList.includes(studyId);
 
-  const auth = useAuth();
-
   useEffect(() => {
     getStudyConfig(studyId, globalConfig).then((config) => {
       setActiveConfig(config);
     });
   }, [globalConfig, studyId]);
 
-  const [routes, setRoutes] = useState<RouteObject[]>([]);
   const [store, setStore] = useState<Nullable<StudyStore>>(null);
   const { storageEngine } = useStorageEngine();
   const [searchParams] = useSearchParams();
@@ -79,55 +147,25 @@ export function Shell({ globalConfig }: {
         ip: ip.ip,
       };
 
-      const participantSession = await storageEngine.initializeParticipantSession(searchParamsObject, activeConfig, metadata, urlParticipantId);
+      const participantSession = await storageEngine.initializeParticipantSession(studyId, searchParamsObject, activeConfig, metadata, urlParticipantId);
 
       // Initialize the redux stores
-      const newStore = await studyStoreCreator(studyId, activeConfig, participantSession.sequence, metadata, participantSession.answers, auth.user.isAdmin);
+      const newStore = await studyStoreCreator(studyId, activeConfig, participantSession.sequence, metadata, participantSession.answers);
       setStore(newStore);
-
-      // Initialize the routing
-      setRoutes([{
-        element: <StepRenderer />,
-        children: [
-          {
-            path: '/',
-            element: <NavigateWithParams to="0" replace />,
-          },
-          {
-            path: '/:index',
-            element: activeConfig.errors.length > 0 ? (
-              <>
-                <Title order={2} mb={8}>Error loading config</Title>
-                <ErrorLoadingConfig issues={activeConfig.errors} type="error" />
-              </>
-            ) : <ComponentController />,
-          },
-        ],
-      }]);
     }
     initializeUserStoreRouting();
-  }, [storageEngine, activeConfig, studyId, searchParams, auth.user.isAdmin]);
+  }, [storageEngine, activeConfig, studyId, searchParams]);
 
-  const routing = useRoutes(routes);
+  // const routing = useRoutes(routes);
 
-  let toRender: ReactNode = null;
+  const loaderOrRouting = !store ? <LoadingOverlay visible />
+    : (
+      <StudyStoreContext.Provider value={store}>
+        <Provider store={store.store}>
+          <GenerateStudiesRoutes studyId={studyId} config={activeConfig} />
+        </Provider>
+      </StudyStoreContext.Provider>
+    );
 
-  // Definitely a 404
-  if (!isValidStudyId) {
-    toRender = <ResourceNotFound />;
-  } else if (routes.length === 0) {
-    toRender = <LoadingOverlay visible />;
-  } else {
-    // If routing is null, we didn't match any routes
-    toRender = routing && store
-      ? (
-        <StudyStoreContext.Provider value={store}>
-          <Provider store={store.store}>
-            {routing}
-          </Provider>
-        </StudyStoreContext.Provider>
-      )
-      : <ResourceNotFound />;
-  }
-  return toRender;
+  return loaderOrRouting;
 }

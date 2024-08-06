@@ -191,8 +191,9 @@ export function StepsPanel({
   }
 
   return (
-    <>
-      {components.map((step, idx) => {
+    <div>
+      <Text>Hello darkness my old friend</Text>
+      {/* {components.map((step, idx) => {
         if (typeof step === 'string') {
           return (
             <StepItem
@@ -255,7 +256,7 @@ export function StepsPanel({
             </Box>
           </NavLink>
         );
-      })}
-    </>
+      })} */}
+    </div>
   );
 }

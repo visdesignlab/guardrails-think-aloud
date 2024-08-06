@@ -1,4 +1,6 @@
-import { Button, Group, Text } from '@mantine/core';
+import {
+  Button, Center, Group, Text,
+} from '@mantine/core';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import {

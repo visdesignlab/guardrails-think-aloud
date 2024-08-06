@@ -1,4 +1,6 @@
-import { useCallback, useMemo } from 'react';
+import {
+  useCallback, useEffect, useMemo, useState,
+} from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   useStoreSelector,
@@ -10,7 +12,7 @@ import {
 import { useCurrentComponent, useCurrentStep, useStudyId } from '../../routes/utils';
 
 import { deepCopy } from '../../utils/deepCopy';
-import { StoredAnswer, ValidationStatus } from '../types';
+import { Sequence, StoredAnswer, ValidationStatus } from '../types';
 import { useStorageEngine } from '../../storage/storageEngineHooks';
 import { useStoredAnswer } from './useStoredAnswer';
 import { useWindowEvents } from './useWindowEvents';
@@ -51,6 +53,19 @@ export function useNextStep() {
   const { saveTrialAnswer, setIframeAnswers } = useStoreActions();
   const { storageEngine } = useStorageEngine();
 
+  const studyId = useStudyId();
+
+  const [dataCollectionEnabled, setDataCollectionEnabled] = useState(true);
+  useEffect(() => {
+    const checkStudyNavigatorEnabled = async () => {
+      if (storageEngine) {
+        const modes = await storageEngine.getModes(studyId);
+        setDataCollectionEnabled(modes.dataCollectionEnabled);
+      }
+    };
+    checkStudyNavigatorEnabled();
+  }, [storageEngine, studyId]);
+
   const areResponsesValid = useAreResponsesValid(identifier);
 
   // Status of the next button. If false, the next button should be disabled
@@ -61,8 +76,6 @@ export function useNextStep() {
   const navigate = useNavigate();
 
   const studyConfig = useStudyConfig();
-
-  const studyId = useStudyId();
 
   const startTime = useMemo(() => Date.now(), []);
 
@@ -85,7 +98,7 @@ export function useNextStep() {
     // Get current window events. Splice empties the array and returns the removed elements, which handles clearing the array
     const currentWindowEvents = windowEvents && 'current' in windowEvents && windowEvents.current ? windowEvents.current.splice(0, windowEvents.current.length) : [];
 
-    if (!storedAnswer.endTime) {
+    if (dataCollectionEnabled && !storedAnswer.endTime) {
       storeDispatch(
         saveTrialAnswer({
           identifier,
@@ -113,7 +126,7 @@ export function useNextStep() {
     let nextStep = currentStep + 1;
 
     // Traverse through the sequence to find the block the current component is in
-    const blocksForStep = findBlockForStep(sequence, currentStep);
+    const blocksForStep = findBlockForStep(sequence as Sequence, currentStep);
 
     // If the current component is in a block that has a skip block (or is nested in a block that has a skip block), we need to check if the skip block should be triggered
     const hasSkipBlock = blocksForStep !== null && (blocksForStep.some((block) => Object.hasOwn(block.currentBlock, 'skip') && block.currentBlock.skip !== undefined));
@@ -180,7 +193,7 @@ export function useNextStep() {
 
         if (conditionIsTriggered) {
           const nextStepIndex = participantSequence.indexOf(condition.to);
-          const nextStepBlockIndex = nextStepIndex === -1 ? findIndexOfBlock(sequence, condition.to) : -1;
+          const nextStepBlockIndex = nextStepIndex === -1 ? findIndexOfBlock(sequence as Sequence, condition.to) : -1;
           nextStep = nextStepIndex === -1 ? nextStepBlockIndex : nextStepIndex;
           return true;
         }

@@ -1,6 +1,11 @@
-import { createSlice, configureStore, type PayloadAction } from '@reduxjs/toolkit';
+import {
+  createSlice, configureStore, type PayloadAction, applyMiddleware,
+} from '@reduxjs/toolkit';
 import { createContext, useContext } from 'react';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
+import {
+  createStateSyncMiddleware, initMessageListener, initStateWithPrevTab, withReduxStateSync,
+} from 'redux-state-sync';
 import { ResponseBlockLocation, StudyConfig } from '../parser/types';
 import {
   StoredAnswer, TrialValidation, TrrackedProvenance, StoreState, Sequence, ParticipantMetadata,
@@ -10,10 +15,9 @@ import { getSequenceFlatMap } from '../utils/getSequenceFlatMap';
 export async function studyStoreCreator(
   studyId: string,
   config: StudyConfig,
-  sequence: Sequence,
+  sequence: Sequence | string[],
   metadata: ParticipantMetadata,
   answers: Record<string, StoredAnswer>,
-  isAdmin: boolean,
 ) {
   const flatSequence = getSequenceFlatMap(sequence);
 
@@ -34,15 +38,20 @@ export async function studyStoreCreator(
   const initialState: StoreState = {
     studyId,
     answers: Object.keys(answers).length > 0 ? answers : emptyAnswers,
+    isRecording: false,
     sequence,
     config,
-    showStudyBrowser: import.meta.env.VITE_REVISIT_MODE === 'public' || isAdmin,
+    showStudyBrowser: true,
     showHelpText: false,
     alertModal: { show: false, message: '' },
     trialValidation: answers ? allValid : emptyValidation,
     iframeAnswers: {},
     iframeProvenance: null,
     metadata,
+    analysisTrialName: null,
+    analysisProvState: null,
+    analysisParticipantName: null,
+    analysisWaveformTime: 0,
   };
 
   const storeSlice = createSlice({
@@ -51,6 +60,9 @@ export async function studyStoreCreator(
     reducers: {
       setConfig(state, payload: PayloadAction<StudyConfig>) {
         state.config = payload.payload;
+      },
+      setIsRecording(state, payload: PayloadAction<boolean>) {
+        state.isRecording = payload.payload;
       },
       toggleStudyBrowser: (state) => {
         state.showStudyBrowser = !state.showStudyBrowser;
@@ -63,6 +75,15 @@ export async function studyStoreCreator(
       },
       setIframeAnswers: (state, action: PayloadAction<Record<string, unknown>>) => {
         state.iframeAnswers = action.payload;
+      },
+      setAnalysisTrialName: (state, action: PayloadAction<string | null>) => {
+        state.analysisTrialName = action.payload;
+      },
+      setAnalysisParticipantName: (state, action: PayloadAction<string | null>) => {
+        state.analysisParticipantName = action.payload;
+      },
+      setAnalysisWaveformTime: (state, action: PayloadAction<number>) => {
+        state.analysisWaveformTime = action.payload;
       },
       setIframeProvenance: (state, action: PayloadAction<TrrackedProvenance | null>) => {
         state.iframeProvenance = action.payload;
@@ -93,6 +114,9 @@ export async function studyStoreCreator(
           state.trialValidation[payload.identifier].provenanceGraph = payload.provenanceGraph;
         }
       },
+      saveAnalysisState(state, { payload } : PayloadAction<unknown>) {
+        state.analysisProvState = payload;
+      },
       saveTrialAnswer(
         state,
         {
@@ -113,12 +137,20 @@ export async function studyStoreCreator(
     },
   });
 
+  const syncMiddleware = createStateSyncMiddleware({});
+
   const store = configureStore(
     {
-      reducer: storeSlice.reducer,
+      reducer: withReduxStateSync(storeSlice.reducer),
       preloadedState: initialState,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      middleware: (getDefaultMiddleware) => getDefaultMiddleware().prepend(syncMiddleware as any),
     },
   );
+
+  initMessageListener(store);
+
+  initStateWithPrevTab(store);
 
   return { store, actions: storeSlice.actions };
 }

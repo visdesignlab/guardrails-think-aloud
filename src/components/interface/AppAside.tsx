@@ -40,10 +40,9 @@ function InfoHover({ text }: { text: string }) {
 }
 
 export default function AppAside() {
-  const { showStudyBrowser, sequence, metadata } = useStoreSelector((state) => state);
+  const { sequence, metadata } = useStoreSelector((state) => state);
   const { toggleStudyBrowser } = useStoreActions();
 
-  const currentComponent = useCurrentComponent();
   const studyConfig = useStudyConfig();
   const dispatch = useStoreDispatch();
 
@@ -61,58 +60,60 @@ export default function AppAside() {
 
   const [activeTab, setActiveTab] = useState<string | null>('participant');
 
-  return showStudyBrowser || (currentComponent === 'end' && studyConfig.uiConfig.autoDownloadStudy) ? (
-    <AppShell.Aside p="0">
-      <AppShell.Section>
-        <Flex direction="row" p="sm" justify="space-between" pb="xs">
-          <Text size="md" fw={700} pt={3}>
-            Study Browser
-          </Text>
-          <Button
-            variant="light"
-            leftSection={<IconUserPlus size={14} />}
-            onClick={() => getNewParticipant(storageEngine, studyConfig, metadata, studyHref)}
-            size="xs"
-            disabled={activeTab === 'allTrials'}
-          >
-            Next Participant
-          </Button>
-          <CloseButton
-            onClick={() => dispatch(toggleStudyBrowser())}
-            mt={1}
-          />
-        </Flex>
-      </AppShell.Section>
+  return null;
 
-      <AppShell.Section grow component={ScrollArea} p="xs" pt={0}>
-        <Tabs value={activeTab} onChange={setActiveTab}>
-          <Box style={{
-            position: 'sticky',
-            top: 0,
-            backgroundColor: 'white',
-            zIndex: 1,
-          }}
-          >
-            <Tabs.List grow>
-              <Tabs.Tab value="participant">
-                Participant View
-                <InfoHover text="The Participants View shows items just as a participants would see them, considering randomization, omissions, etc. You can navigate between multiple participants using the next participant button." />
-              </Tabs.Tab>
-              <Tabs.Tab value="allTrials">
-                All Trials View
-                <InfoHover text="The All Trials View shows all items in the order defined in the config." />
-              </Tabs.Tab>
-            </Tabs.List>
-          </Box>
+  // return (
+  //   <AppShell.Aside p="0">
+  //     <AppShell.Section>
+  //       <Flex direction="row" p="sm" justify="space-between" pb="xs">
+  //         <Text size="md" fw={700} pt={3}>
+  //           Study Browser
+  //         </Text>
+  //         <Button
+  //           variant="light"
+  //           leftSection={<IconUserPlus size={14} />}
+  //           onClick={() => getNewParticipant(storageEngine, studyConfig, metadata, studyHref)}
+  //           size="xs"
+  //           disabled={activeTab === 'allTrials'}
+  //         >
+  //           Next Participant
+  //         </Button>
+  //         <CloseButton
+  //           onClick={() => dispatch(toggleStudyBrowser())}
+  //           mt={1}
+  //         />
+  //       </Flex>
+  //     </AppShell.Section>
 
-          <Tabs.Panel value="participant">
-            <StepsPanel configSequence={fullOrder} participantSequence={sequence} fullSequence={sequence} participantView />
-          </Tabs.Panel>
-          <Tabs.Panel value="allTrials">
-            <StepsPanel configSequence={fullOrder} participantSequence={sequence} fullSequence={sequence} participantView={false} />
-          </Tabs.Panel>
-        </Tabs>
-      </AppShell.Section>
-    </AppShell.Aside>
-  ) : null;
+  //     <AppShell.Section grow component={ScrollArea} p="xs" pt={0}>
+  //       <Tabs value={activeTab} onChange={setActiveTab}>
+  //         <Box style={{
+  //           position: 'sticky',
+  //           top: 0,
+  //           backgroundColor: 'white',
+  //           zIndex: 1,
+  //         }}
+  //         >
+  //           <Tabs.List grow>
+  //             <Tabs.Tab value="participant">
+  //               Participant View
+  //               <InfoHover text="The Participants View shows items just as a participants would see them, considering randomization, omissions, etc. You can navigate between multiple participants using the next participant button." />
+  //             </Tabs.Tab>
+  //             <Tabs.Tab value="allTrials">
+  //               All Trials View
+  //               <InfoHover text="The All Trials View shows all items in the order defined in the config." />
+  //             </Tabs.Tab>
+  //           </Tabs.List>
+  //         </Box>
+
+  //         <Tabs.Panel value="participant">
+  //           <StepsPanel configSequence={fullOrder} participantSequence={sequence} fullSequence={sequence} participantView />
+  //         </Tabs.Panel>
+  //         <Tabs.Panel value="allTrials">
+  //           <StepsPanel configSequence={fullOrder} participantSequence={sequence} fullSequence={sequence} participantView={false} />
+  //         </Tabs.Panel>
+  //       </Tabs>
+  //     </AppShell.Section>
+  //   </AppShell.Aside>
+  // );
 }

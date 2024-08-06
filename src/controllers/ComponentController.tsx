@@ -1,9 +1,8 @@
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import merge from 'lodash.merge';
-import ResponseBlock from '../components/response/ResponseBlock';
+import { useNavigate, useParams } from 'react-router-dom';
 import IframeController from './IframeController';
 import ImageController from './ImageController';
-import ReactComponentController from './ReactComponentController';
 import MarkdownController from './MarkdownController';
 import { useStudyConfig } from '../store/hooks/useStudyConfig';
 import { useCurrentComponent, useCurrentStep } from '../routes/utils';
@@ -11,22 +10,88 @@ import { useStoredAnswer } from '../store/hooks/useStoredAnswer';
 import ReactMarkdownWrapper from '../components/ReactMarkdownWrapper';
 import { isInheritedComponent } from '../parser/parser';
 import { IndividualComponent } from '../parser/types';
+import {
+  useStoreActions, useStoreDispatch, useStoreSelector, useFlatSequence,
+} from '../store/store';
 import { useDisableBrowserBack } from '../utils/useDisableBrowserBack';
 import { useStorageEngine } from '../storage/storageEngineHooks';
-import { useStoreActions, useStoreDispatch } from '../store/store';
 import { StudyEnd } from '../components/StudyEnd';
+import ResponseBlock from '../components/response/ResponseBlock';
 import ResourceNotFound from '../ResourceNotFound';
+import ReactComponentController from './ReactComponentController';
 
 // current active stimuli presented to the user
-export default function ComponentController() {
+export default function ComponentController({ provState } : {provState?: unknown}) {
   // Get the config for the current step
   const studyConfig = useStudyConfig();
+  const storage = useStorageEngine();
+
   const currentStep = useCurrentStep();
   const currentComponent = useCurrentComponent() || 'Notfound';
   const stepConfig = studyConfig.components[currentComponent];
 
   // If we have a trial, use that config to render the right component else use the step
   const status = useStoredAnswer();
+
+  const currentConfig = isInheritedComponent(stepConfig) && studyConfig.baseComponents ? merge({}, studyConfig.baseComponents?.[stepConfig.baseComponent], stepConfig) as IndividualComponent : stepConfig as IndividualComponent;
+
+  const instruction = (currentConfig.instruction || '');
+  const { instructionLocation } = currentConfig;
+  const instructionInSideBar = studyConfig.uiConfig.sidebar && (instructionLocation === 'sidebar' || instructionLocation === undefined);
+
+  const [audioStream, setAudioStream] = useState<MediaRecorder | null>(null);
+  const dispatch = useStoreDispatch();
+  const { setIsRecording } = useStoreActions();
+  const { analysisTrialName, analysisProvState, analysisParticipantName } = useStoreSelector((state) => state);
+
+  const { trrackId } = useParams();
+
+  const navigate = useNavigate();
+
+  const [prevTrialName, setPrevTrialName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (currentComponent && analysisTrialName && trrackId && (currentComponent !== analysisTrialName || trrackId !== analysisParticipantName)) {
+      navigate(`../../${analysisParticipantName || trrackId}/reviewer-${analysisTrialName}`, { relative: 'path' });
+    }
+  }, [analysisParticipantName, analysisProvState, analysisTrialName, currentComponent, currentStep, navigate, trrackId]);
+
+  useEffect(() => {
+    if (!currentStep || !studyConfig || !studyConfig.recordStudyAudio || !storage.storageEngine) {
+      return;
+    }
+
+    if (audioStream && prevTrialName) {
+      storage.storageEngine.saveAudio(audioStream, prevTrialName);
+    }
+
+    if (studyConfig.tasksToNotRecordAudio && studyConfig.tasksToNotRecordAudio.includes(currentComponent)) {
+      setPrevTrialName(null);
+      setAudioStream(null);
+      dispatch(setIsRecording(false));
+    } else {
+      const _stream = navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+
+      _stream.then((stream) => {
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.start();
+
+        setAudioStream(mediaRecorder);
+        dispatch(setIsRecording(true));
+      });
+      setPrevTrialName(currentComponent);
+    }
+
+    // return () => {
+    //   if (_stream) {
+    //     _stream.then((data) => {
+    //       data.getTracks().forEach((track) => track.stop());
+    //     });
+    //   }
+    // };
+  }, [currentComponent]);
 
   // Disable browser back button from all stimuli
   useDisableBrowserBack();
@@ -36,7 +101,7 @@ export default function ComponentController() {
   const storeDispatch = useStoreDispatch();
   const { setAlertModal } = useStoreActions();
   useEffect(() => {
-    if (storageEngine?.getEngine() !== import.meta.env.VITE_STORAGE_ENGINE && import.meta.env.VITE_REVISIT_MODE !== 'public') {
+    if (storageEngine?.getEngine() !== import.meta.env.VITE_STORAGE_ENGINE) {
       storeDispatch(setAlertModal({
         show: true,
         message: `There was an issue connecting to the ${import.meta.env.VITE_STORAGE_ENGINE} database. This could be caused by a network issue or your adblocker. If you are using an adblocker, please disable it for this website and refresh.`,
@@ -54,11 +119,6 @@ export default function ComponentController() {
     return <ResourceNotFound email={studyConfig.uiConfig.contactEmail} />;
   }
 
-  const currentConfig = isInheritedComponent(stepConfig) && studyConfig.baseComponents ? merge({}, studyConfig.baseComponents?.[stepConfig.baseComponent], stepConfig) as IndividualComponent : stepConfig as IndividualComponent;
-  const instruction = (currentConfig.instruction || '');
-  const { instructionLocation } = currentConfig;
-  const instructionInSideBar = studyConfig.uiConfig.sidebar && (instructionLocation === 'sidebar' || instructionLocation === undefined);
-
   return (
     <>
       {instructionLocation === 'aboveStimulus' && <ReactMarkdownWrapper text={instruction} />}
@@ -73,7 +133,7 @@ export default function ComponentController() {
         {currentConfig.type === 'markdown' && <MarkdownController currentConfig={currentConfig} />}
         {currentConfig.type === 'website' && <IframeController currentConfig={currentConfig} />}
         {currentConfig.type === 'image' && <ImageController currentConfig={currentConfig} />}
-        {currentConfig.type === 'react-component' && <ReactComponentController currentConfig={currentConfig} />}
+        {currentConfig.type === 'react-component' && <ReactComponentController currentConfig={currentConfig} provState={analysisProvState} />}
       </Suspense>
 
       {(instructionLocation === 'belowStimulus' || (instructionLocation === undefined && !instructionInSideBar)) && <ReactMarkdownWrapper text={instruction} />}

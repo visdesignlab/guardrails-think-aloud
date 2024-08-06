@@ -1,5 +1,5 @@
 {
-    "$schema": "https://raw.githubusercontent.com/revisit-studies/study/v1.0.0-beta13/src/parser/GlobalConfigSchema.json",
+    "$schema": "https://raw.githubusercontent.com/revisit-studies/study/v1.0.0/src/parser/GlobalConfigSchema.json",
     "configsList": [
         "stage-2"
     ],
@@ -7,6 +7,5 @@
         "stage-2": {
             "path": "stage-2/config-stage-2.json"
         }
-    },
-    "adminUsers": []
+    }
 }
