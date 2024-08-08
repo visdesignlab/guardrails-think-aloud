@@ -22,6 +22,7 @@ import { deepCopy } from '../../utils/deepCopy';
 import { ComponentBlock } from '../../parser/types';
 import { getNewParticipant } from '../../utils/nextParticipant';
 import { useStorageEngine } from '../../storage/storageEngineHooks';
+import { Sequence } from '../../store/types';
 
 function addPathToComponentBlock(order: ComponentBlock | string, orderPath: string): (ComponentBlock & { orderPath: string }) | string {
   if (typeof order === 'string') {
@@ -60,60 +61,58 @@ export default function AppAside() {
 
   const [activeTab, setActiveTab] = useState<string | null>('participant');
 
-  return null;
+  return (
+    <AppShell.Aside p="0">
+      <AppShell.Section>
+        <Flex direction="row" p="sm" justify="space-between" pb="xs">
+          <Text size="md" fw={700} pt={3}>
+            Study Browser
+          </Text>
+          <Button
+            variant="light"
+            leftSection={<IconUserPlus size={14} />}
+            onClick={() => getNewParticipant(storageEngine, studyConfig, metadata, studyHref)}
+            size="xs"
+            disabled={activeTab === 'allTrials'}
+          >
+            Next Participant
+          </Button>
+          <CloseButton
+            onClick={() => dispatch(toggleStudyBrowser())}
+            mt={1}
+          />
+        </Flex>
+      </AppShell.Section>
 
-  // return (
-  //   <AppShell.Aside p="0">
-  //     <AppShell.Section>
-  //       <Flex direction="row" p="sm" justify="space-between" pb="xs">
-  //         <Text size="md" fw={700} pt={3}>
-  //           Study Browser
-  //         </Text>
-  //         <Button
-  //           variant="light"
-  //           leftSection={<IconUserPlus size={14} />}
-  //           onClick={() => getNewParticipant(storageEngine, studyConfig, metadata, studyHref)}
-  //           size="xs"
-  //           disabled={activeTab === 'allTrials'}
-  //         >
-  //           Next Participant
-  //         </Button>
-  //         <CloseButton
-  //           onClick={() => dispatch(toggleStudyBrowser())}
-  //           mt={1}
-  //         />
-  //       </Flex>
-  //     </AppShell.Section>
+      <AppShell.Section grow component={ScrollArea} p="xs" pt={0}>
+        <Tabs value={activeTab} onChange={setActiveTab}>
+          <Box style={{
+            position: 'sticky',
+            top: 0,
+            backgroundColor: 'white',
+            zIndex: 1,
+          }}
+          >
+            <Tabs.List grow>
+              <Tabs.Tab value="participant">
+                Participant View
+                <InfoHover text="The Participants View shows items just as a participants would see them, considering randomization, omissions, etc. You can navigate between multiple participants using the next participant button." />
+              </Tabs.Tab>
+              <Tabs.Tab value="allTrials">
+                All Trials View
+                <InfoHover text="The All Trials View shows all items in the order defined in the config." />
+              </Tabs.Tab>
+            </Tabs.List>
+          </Box>
 
-  //     <AppShell.Section grow component={ScrollArea} p="xs" pt={0}>
-  //       <Tabs value={activeTab} onChange={setActiveTab}>
-  //         <Box style={{
-  //           position: 'sticky',
-  //           top: 0,
-  //           backgroundColor: 'white',
-  //           zIndex: 1,
-  //         }}
-  //         >
-  //           <Tabs.List grow>
-  //             <Tabs.Tab value="participant">
-  //               Participant View
-  //               <InfoHover text="The Participants View shows items just as a participants would see them, considering randomization, omissions, etc. You can navigate between multiple participants using the next participant button." />
-  //             </Tabs.Tab>
-  //             <Tabs.Tab value="allTrials">
-  //               All Trials View
-  //               <InfoHover text="The All Trials View shows all items in the order defined in the config." />
-  //             </Tabs.Tab>
-  //           </Tabs.List>
-  //         </Box>
-
-  //         <Tabs.Panel value="participant">
-  //           <StepsPanel configSequence={fullOrder} participantSequence={sequence} fullSequence={sequence} participantView />
-  //         </Tabs.Panel>
-  //         <Tabs.Panel value="allTrials">
-  //           <StepsPanel configSequence={fullOrder} participantSequence={sequence} fullSequence={sequence} participantView={false} />
-  //         </Tabs.Panel>
-  //       </Tabs>
-  //     </AppShell.Section>
-  //   </AppShell.Aside>
-  // );
+          <Tabs.Panel value="participant">
+            <StepsPanel configSequence={fullOrder} participantSequence={sequence as Sequence} fullSequence={sequence as Sequence} participantView />
+          </Tabs.Panel>
+          {/* <Tabs.Panel value="allTrials">
+            <StepsPanel configSequence={fullOrder} participantSequence={sequence} fullSequence={sequence} participantView={false} />
+          </Tabs.Panel> */}
+        </Tabs>
+      </AppShell.Section>
+    </AppShell.Aside>
+  );
 }

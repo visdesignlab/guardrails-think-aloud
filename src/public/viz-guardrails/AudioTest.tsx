@@ -9,6 +9,7 @@ import {
   useEffect,
 } from 'react';
 import { StimulusParams } from '../../store/types';
+import RecordingAudioWaveform from '../../components/interface/RecordingAudioWaveform';
 
 export function AudioTest({ parameters, setAnswer }: StimulusParams<any>) {
   useEffect(() => {
@@ -71,6 +72,7 @@ export function AudioTest({ parameters, setAnswer }: StimulusParams<any>) {
         <Text ta="center" fw={700}>
           If you are not comfortable or able to speak English during this study, please close it now.
         </Text>
+        <Center><RecordingAudioWaveform height={200} width={400} /></Center>
       </Stack>
     </Center>
   );

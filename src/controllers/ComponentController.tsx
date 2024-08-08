@@ -65,7 +65,8 @@ export default function ComponentController({ provState } : {provState?: unknown
       storage.storageEngine.saveAudio(audioStream, prevTrialName);
     }
 
-    if (studyConfig.tasksToNotRecordAudio && studyConfig.tasksToNotRecordAudio.includes(currentComponent)) {
+    if (!stepConfig.recordAudio) {
+      audioStream?.stop();
       setPrevTrialName(null);
       setAudioStream(null);
       dispatch(setIsRecording(false));

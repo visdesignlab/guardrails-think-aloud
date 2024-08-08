@@ -503,6 +503,8 @@ export interface BaseIndividualComponent {
   description?: string;
   /** The instruction of the component. This is used to identify and provide additional information for the component in the admin panel. */
   instruction?: string;
+
+  recordAudio?: boolean;
 }
 
 /**

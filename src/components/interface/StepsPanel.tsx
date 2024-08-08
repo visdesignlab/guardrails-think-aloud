@@ -192,21 +192,25 @@ export function StepsPanel({
 
   return (
     <div>
-      <Text>Hello darkness my old friend</Text>
-      {/* {components.map((step, idx) => {
+      {/* <Text>Hello darkness my old friend</Text> */}
+      {components.map((step, idx) => {
         if (typeof step === 'string') {
-          return (
-            <StepItem
-              key={idx}
-              step={step}
-              disabled={participantView && participantSequence?.components[idx] !== step}
-              fullSequence={fullSequence}
-              startIndex={idx}
-              interruption={(configSequence.interruptions && (configSequence.interruptions.findIndex((i) => i.components.includes(step)) > -1)) || false}
-              subSequence={participantSequence}
-              participantView={participantView}
-            />
-          );
+          if (!(participantView && participantSequence?.components[idx] !== step)) {
+            return (
+              <StepItem
+                key={idx}
+                step={step}
+                disabled={participantView && participantSequence?.components[idx] !== step}
+                fullSequence={fullSequence}
+                startIndex={idx}
+                interruption={(configSequence.interruptions && (configSequence.interruptions.findIndex((i) => i.components.includes(step)) > -1)) || false}
+                subSequence={participantSequence}
+                participantView={participantView}
+              />
+            );
+          }
+
+          return null;
         }
 
         const participantSubSequence = participantSequence?.components.find((s) => typeof s !== 'string' && s.orderPath === step.orderPath) as Sequence | undefined;
@@ -256,7 +260,7 @@ export function StepsPanel({
             </Box>
           </NavLink>
         );
-      })} */}
+      })}
     </div>
   );
 }

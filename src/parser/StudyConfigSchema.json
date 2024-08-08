@@ -104,6 +104,9 @@
             "description": "Controls whether the component should provide feedback to the participant, such as in a training trial. If not provided, the default is false.",
             "type": "boolean"
           },
+          "recordAudio": {
+            "type": "boolean"
+          },
           "response": {
             "description": "The responses to the component",
             "items": {
@@ -468,6 +471,9 @@
           "description": "Controls whether the component should provide feedback to the participant, such as in a training trial. If not provided, the default is false.",
           "type": "boolean"
         },
+        "recordAudio": {
+          "type": "boolean"
+        },
         "response": {
           "description": "The responses to the component",
           "items": {
@@ -653,6 +659,9 @@
         },
         "provideFeedback": {
           "description": "Controls whether the component should provide feedback to the participant, such as in a training trial. If not provided, the default is false.",
+          "type": "boolean"
+        },
+        "recordAudio": {
           "type": "boolean"
         },
         "response": {
@@ -865,6 +874,9 @@
           "description": "Controls whether the component should provide feedback to the participant, such as in a training trial. If not provided, the default is false.",
           "type": "boolean"
         },
+        "recordAudio": {
+          "type": "boolean"
+        },
         "response": {
           "description": "The responses to the component",
           "items": {
@@ -1005,6 +1017,9 @@
         },
         "provideFeedback": {
           "description": "Controls whether the component should provide feedback to the participant, such as in a training trial. If not provided, the default is false.",
+          "type": "boolean"
+        },
+        "recordAudio": {
           "type": "boolean"
         },
         "response": {
@@ -1168,6 +1183,9 @@
         },
         "provideFeedback": {
           "description": "Controls whether the component should provide feedback to the participant, such as in a training trial. If not provided, the default is false.",
+          "type": "boolean"
+        },
+        "recordAudio": {
           "type": "boolean"
         },
         "response": {
@@ -1636,6 +1654,9 @@
         },
         "provideFeedback": {
           "description": "Controls whether the component should provide feedback to the participant, such as in a training trial. If not provided, the default is false.",
+          "type": "boolean"
+        },
+        "recordAudio": {
           "type": "boolean"
         },
         "response": {
