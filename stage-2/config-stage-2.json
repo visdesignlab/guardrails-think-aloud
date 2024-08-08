@@ -19,7 +19,7 @@
         "autoDownloadStudy": false,
         "sidebar": false,
         "urlParticipantIdParam": "PROLIFIC_PID",
-        "studyEndMsg": "**Thank you for completing the study. You may click this link and return to Prolific**: [https://app.prolific.com/submissions/complete?cc=C19P3VR0](https://app.prolific.com/submissions/complete?cc=C19P3VR0)"
+        "studyEndMsg": "**Thank you for completing the study. You may click this link and return to Prolific**: [https://app.prolific.com/submissions/complete?cc=CN8SATZO](https://app.prolific.com/submissions/complete?cc=CN8SATZO)"
     },
     "recordStudyAudio": true,
     "tasksToNotRecordAudio": [
@@ -27997,6 +27997,61 @@
                     "placeholder": "Type your answer here."
                 }
             ]
+        },
+        "post-study-survey": {
+            "type": "questionnaire",
+            "response": [
+                {
+                    "id": "q1",
+                    "prompt": "How comfortable were you answering questions out loud?",
+                    "required": true,
+                    "location": "aboveStimulus",
+                    "type": "likert",
+                    "numItems": 7,
+                    "rightLabel": "Very comfortable",
+                    "leftLabel": "Not comfortable"
+                },
+                {
+                    "id": "privacyQ",
+                    "prompt": "Do you have any privacy concerns about having your audio recorded?",
+                    "required": true,
+                    "location": "aboveStimulus",
+                    "type": "longText",
+                    "placeholder": "Enter your comments here"
+                },
+                {
+                    "id": "q5",
+                    "prompt": "Please provide any comments about the process of answering questions out loud.",
+                    "required": false,
+                    "location": "aboveStimulus",
+                    "type": "longText",
+                    "placeholder": "Enter your comments here"
+                },
+                {
+                    "id": "surveyExperience",
+                    "prompt": "Did you experience any problems with our tool?",
+                    "required": true,
+                    "location": "belowStimulus",
+                    "type": "longText",
+                    "placeholder": "Enter your answer here."
+                },
+                {
+                    "id": "surveyRenderIssues",
+                    "prompt": "Did anything not render or display properly?",
+                    "required": true,
+                    "location": "belowStimulus",
+                    "type": "longText",
+                    "placeholder": "Enter your answer here"
+                },
+                {
+                    "id": "surveyOtherIssues",
+                    "prompt": "Any other issues or anything you would like to tell us?",
+                    "required": true,
+                    "location": "belowStimulus",
+                    "type": "longText",
+                    "placeholder": "Enter your answer here"
+                }
+            ]
         }
     },
     "sequence": {
@@ -30491,7 +30546,7 @@
                     }
                 ]
             },
-            "post-study"
+            "post-study-survey"
         ]
     }
 }
