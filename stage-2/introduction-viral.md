@@ -9,15 +9,11 @@ Countries within each continent are similar to each other in size and demographi
 
 **Scenario**: There’s a new viral disease called *Celestial Sniffles*. 
 Most countries in the world have adopted one of 3 major disease containment policies: A, B, or C.
-Luckily, your country has not been affected yet but you may need to travel to one of the affected countries for work.
-Afraid of getting sick and stuck abroad with a huge hospital bill, you decide to purchase a traveler's health insurance policy.
-The price of the policy is very flexible and depends on the amount of coverage you'll get: 
-anywhere between $0 (no coverage) to $100 (full coverage).
+Luckily, your country has not been affected yet, but will soon vote on which policy to adopt.
 
 Since you are not familiar with the disease trends or containment policies, you turn to social media to read what people shared about recent infection rates.
 
 **Task**: In the experiment, you will see a set of visualizations that show infection rates in different countries that adopted
-one of the containment policies A, B, or C. 
-Based on each visualization, you will be asked to decide **how much to spend on your insurance policy** and **answer a short survey**.
+one of the containment policies A, B, or C. Based on each visualization, you will be asked to explain whether or not you trust the visualization and caption.
 
-<img src='../viz-guardrails/images/map.png' width='700'>
+<img src='./images/map.png' width='700'>

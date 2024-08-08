@@ -14,7 +14,7 @@ more about how people select data in visualizations and use them for communicati
 
 #### Tasks
 It will take approximately 5-10 minutes to finish this test. 
-You will be shown a series of 5 data visualizations accompanied by short captions.
+You will be shown a series of 10 data visualizations accompanied by short captions.
 Your task is to answer a short survey about each visualization, indicating your opinion on how effective they are.
 We suggest maximizing your browser window as some charts can be on the larger side.
 
