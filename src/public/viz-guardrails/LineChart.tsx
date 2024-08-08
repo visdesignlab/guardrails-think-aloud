@@ -17,7 +17,7 @@ import { OwidDistinctLinesPalette } from './Color';
 const margin = {
   top: 30,
   left: 40,
-  right: 80,
+  right: 150,
   bottom: 50,
 };
 
@@ -82,7 +82,7 @@ export function LineChart({
   // ---------------------------- Setup ----------------------------
 
   /// ////////// Setting sizing
-  const width = (dataname === 'clean_data' ? 800 - margin.left - margin.right - 60 : 800 - margin.left - margin.right);
+  const width = (dataname === 'clean_data' ? 900 - margin.left - margin.right - 60 : 900 - margin.left - margin.right);
 
   const height = 400 - margin.top - margin.bottom;
 
@@ -259,7 +259,7 @@ export function LineChart({
         <Text fs="italic" c="dimmed">Select an item to view the chart.</Text>
       </Center>
     ) : (
-      <svg id="baseLineChart" style={{ height: '400px', width: '800px', fontFamily: '"Helvetica Neue", "Helvetica", "Arial", sans-serif' }}>
+      <svg id="baseLineChart" style={{ height: '400px', width: '900px', fontFamily: '"Helvetica Neue", "Helvetica", "Arial", sans-serif' }}>
 
         <g id="axes">
           <XAxis

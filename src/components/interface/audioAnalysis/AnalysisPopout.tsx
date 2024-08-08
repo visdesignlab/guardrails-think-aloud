@@ -418,7 +418,7 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
                 style={{ width: '300px' }}
                 clearable
                 value={trialFilter}
-                data={participant ? [...getSequenceFlatMap(participant.sequence)] : []}
+                data={participant ? [...new Set([...getSequenceFlatMap(participant.sequence)])] : []}
                 onChange={(val) => navigate(`${trialFilter ? '../' : ''}reviewer-${val || ''}`, { relative: 'path' })}
               />
               <ActionIcon>
@@ -437,9 +437,9 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
               <Box
                 ref={waveSurferDiv}
                 ml={participant && xScale ? xScale(participant.answers.audioTest_2.startTime) : 0}
-                mr={participant && xScale ? xScale(participant.answers['post-study-survey_13'].startTime) : 0}
+                mr={participant && xScale ? xScale(participant.answers['post-study-survey_19'].startTime) : 0}
                 style={{
-                  overflow: 'visible', width: `${participant && !trialFilter ? xScale(participant.answers['post-study-survey_13'].startTime) - xScale(participant.answers.audioTest_2.startTime) : (xScale.range()[1] - xScale.range()[0])}px`,
+                  overflow: 'visible', width: `${participant && !trialFilter ? xScale(participant.answers['post-study-survey_19'].startTime) - xScale(participant.answers.audioTest_2.startTime) : (xScale.range()[1] - xScale.range()[0])}px`,
                 }}
               >
                 <WaveSurferContext.Provider value={wavesurfer}>

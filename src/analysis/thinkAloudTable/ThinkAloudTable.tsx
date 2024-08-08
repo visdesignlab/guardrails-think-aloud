@@ -95,7 +95,7 @@ export function ThinkAloudTable({
 
   const [currentTask, setCurrentTask] = useState<string | null>(null);
 
-  const uniqueTrials = useMemo(() => configSequenceToUniqueTrials(studyConfig.sequence).map((c) => c.componentName), [studyConfig.sequence]);
+  const uniqueTrials = useMemo(() => [...new Set(configSequenceToUniqueTrials(studyConfig.sequence).map((c) => c.componentName))], [studyConfig.sequence]);
 
   const auth = useAuth();
 
