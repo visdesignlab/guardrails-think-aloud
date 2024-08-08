@@ -40,7 +40,7 @@ identify you.
 The data collected in this study is only being used for the present study and not for future research.
 
 #### Cost/Payment
-You will be compensated $2.50 for participating via Prolific.
+You will be compensated $3 for participating via Prolific.
 
 #### Contact
 For more information about this research or about the rights of
