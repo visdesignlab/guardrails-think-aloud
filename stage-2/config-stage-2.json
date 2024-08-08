@@ -19,7 +19,7 @@
         "autoDownloadStudy": false,
         "sidebar": false,
         "urlParticipantIdParam": "PROLIFIC_PID",
-        "studyEndMsg": "**Thank you for completing the study. You may click this link and return to Prolific**: [https://app.prolific.com/submissions/complete?cc=CN8SATZO](https://app.prolific.com/submissions/complete?cc=CN8SATZO)"
+        "studyEndMsg": "**Thank you for completing the study. You may click this link and return to Prolific**: [https://app.prolific.com/submissions/complete?cc=C1G0NS66](https://app.prolific.com/submissions/complete?cc=C1G0NS66)"
     },
     "recordStudyAudio": true,
     "tasksToNotRecordAudio": [
