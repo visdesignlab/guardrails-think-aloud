@@ -33,10 +33,10 @@ export default function ComponentController({ provState } : {provState?: unknown
   // If we have a trial, use that config to render the right component else use the step
   const status = useStoredAnswer();
 
-  const currentConfig = isInheritedComponent(stepConfig) && studyConfig.baseComponents ? merge({}, studyConfig.baseComponents?.[stepConfig.baseComponent], stepConfig) as IndividualComponent : stepConfig as IndividualComponent;
+  const currentConfig = stepConfig && isInheritedComponent(stepConfig) && studyConfig.baseComponents ? merge({}, studyConfig.baseComponents?.[stepConfig.baseComponent], stepConfig) as IndividualComponent : stepConfig as IndividualComponent;
 
-  const instruction = (currentConfig.instruction || '');
-  const { instructionLocation } = currentConfig;
+  const instruction = (currentConfig?.instruction || '');
+  const instructionLocation = currentConfig?.instructionLocation;
   const instructionInSideBar = studyConfig.uiConfig.sidebar && (instructionLocation === 'sidebar' || instructionLocation === undefined);
 
   const [audioStream, setAudioStream] = useState<MediaRecorder | null>(null);
@@ -65,7 +65,7 @@ export default function ComponentController({ provState } : {provState?: unknown
       storage.storageEngine.saveAudio(audioStream, prevTrialName);
     }
 
-    if (!stepConfig.recordAudio) {
+    if (stepConfig && !stepConfig.recordAudio) {
       audioStream?.stop();
       setPrevTrialName(null);
       setAudioStream(null);
