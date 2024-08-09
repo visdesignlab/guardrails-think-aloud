@@ -77,10 +77,10 @@ export default function AppHeader({ studyNavigatorEnabled, dataCollectionEnabled
           <Flex align="center">
             <Image w={40} src={`${PREFIX}${logoPath}`} alt="Study Logo" />
             <Space w="md" />
-            <Title order={4}>{studyConfig?.studyMetadata.title}</Title>
+            <Title order={4} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{studyConfig?.studyMetadata.title}</Title>
             {isRecording ? (
               <Group ml="xl" gap={20} wrap="nowrap">
-                <Text color="red">Recording audio</Text>
+                <Text color="red" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Recording audio</Text>
                 <RecordingAudioWaveform />
               </Group>
             ) : null}
