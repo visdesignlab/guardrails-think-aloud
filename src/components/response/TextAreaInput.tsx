@@ -27,6 +27,8 @@ export default function TextAreaInput({
     <Textarea
       disabled={disabled}
       placeholder={placeholder}
+      autosize
+      minRows={5}
       label={(
         <Flex direction="row" wrap="nowrap" gap={4}>
           {enumerateQuestions && <Box style={{ minWidth: 'fit-content' }}>{`${index}. `}</Box>}
