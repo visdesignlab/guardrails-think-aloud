@@ -1,4 +1,4 @@
-## Scenario description 
+## Stocks scenario description 
 
 Please read the scenario description below carefully, as it explains the setting for the visualizations you will see.
 If you need to refer to these instructions during the experiment, please click on help in the top right corner of the visualization.
