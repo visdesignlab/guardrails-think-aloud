@@ -604,7 +604,7 @@ export class FirebaseStorageEngine extends StorageEngine {
     const intents = intentDocs.docs.map((intent) => intent.data());
 
     // Get the current row
-    const intentIndex = intents.findIndex((intent) => intent.participantId === participantId || this.currentParticipantId) % sequenceArray.length;
+    const intentIndex = intents.findIndex((intent) => intent.participantId === participantId || intent.participantId === this.currentParticipantId) % sequenceArray.length;
     const selectedIndex = intentIndex === -1 ? Math.floor(Math.random() * sequenceArray.length - 1) : intentIndex;
     const currentRow = sequenceArray[selectedIndex];
 
