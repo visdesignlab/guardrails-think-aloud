@@ -70,7 +70,7 @@ export function AudioTest({ parameters, setAnswer }: StimulusParams<any>) {
           Once we can confirm that your microphone is on and we hear you say something, the continue button will become available.
         </Text>
         <Text ta="center" fw={700}>
-          If you are not comfortable or able to speak English during this study, please close it now.
+          If you are not comfortable or able to speak English during this study, please return the study.
         </Text>
         <Center><RecordingAudioWaveform height={200} width={400} /></Center>
       </Stack>
