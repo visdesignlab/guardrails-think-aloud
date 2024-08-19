@@ -28351,7 +28351,87 @@
         "post-study": {
             "type": "markdown",
             "path": "stage-2/post-study.md",
-            "response": []
+            "response": [
+                {
+                    "id": "viz",
+                    "type": "likert",
+                    "location": "belowStimulus",
+                    "prompt": "How familiar are you with data visualizations?",
+                    "required": true,
+                    "leftLabel": "Not familiar",
+                    "rightLabel": "Very familiar",
+                    "numItems": 5
+                },
+                {
+                    "id": "notice",
+                    "type": "radio",
+                    "location": "belowStimulus",
+                    "prompt": "Did you notice a guardrail in place in some of your tasks?",
+                    "required": true,
+                    "options": [
+                        {
+                            "label": "No",
+                            "value": "no"
+                        },
+                        {
+                            "label": "Yes",
+                            "value": "yes"
+                        }
+                    ]
+                },
+                {
+                    "id": "clear",
+                    "type": "likert",
+                    "location": "belowStimulus",
+                    "prompt": "How clear was it what the guardrails were showing?",
+                    "required": true,
+                    "leftLabel": "Not clear",
+                    "rightLabel": "Very clear",
+                    "numItems": 5
+                },
+                {
+                    "id": "difficulty",
+                    "type": "likert",
+                    "location": "belowStimulus",
+                    "prompt": "Did the guardrail make the visualizations more or less convincing?",
+                    "required": true,
+                    "leftLabel": "Less convincing",
+                    "rightLabel": "More convincing",
+                    "numItems": 5
+                },
+                {
+                    "id": "experience",
+                    "type": "longText",
+                    "location": "belowStimulus",
+                    "prompt": "Describe how the guardrails impacted your evaluation of visualizations. (If possible, refer to specific guardrails):",
+                    "required": true,
+                    "placeholder": "Enter your answer here."
+                },
+                {
+                    "id": "surveyExperience",
+                    "prompt": "Did you experience any problems with our tool?",
+                    "required": true,
+                    "location": "belowStimulus",
+                    "type": "longText",
+                    "placeholder": "Enter your answer here."
+                },
+                {
+                    "id": "surveyRenderIssues",
+                    "prompt": "Did anything not render or display properly?",
+                    "required": true,
+                    "location": "belowStimulus",
+                    "type": "longText",
+                    "placeholder": "Enter your answer here"
+                },
+                {
+                    "id": "surveyOtherIssues",
+                    "prompt": "Any other issues or anything you would like to tell us?",
+                    "required": true,
+                    "location": "belowStimulus",
+                    "type": "longText",
+                    "placeholder": "Enter your answer here"
+                }
+            ]
         },
         "audioTest": {
             "description": "Audio test",
