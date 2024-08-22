@@ -28351,6 +28351,7 @@
         "post-study": {
             "type": "markdown",
             "path": "stage-2/post-study.md",
+            "recordAudio": true,
             "response": [
                 {
                     "id": "viz",
