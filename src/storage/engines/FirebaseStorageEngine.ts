@@ -167,13 +167,21 @@ export class FirebaseStorageEngine extends StorageEngine {
   async saveEditedTranscript(participantId: string, authId: string, taskId: string, transcript: EditedText[]): Promise<void> {
     const taglessTranscript = transcript.map((line) => ({ ...line, selectedTags: line.selectedTags.filter((tag) => tag !== undefined).map((tag) => tag.id) }));
 
-    const storageRef = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/${authId}/${participantId}/${taskId}`);
+    const storageRef1 = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/${authId}/${participantId}/${taskId}`);
+
+    const storageRef2 = ref(this.storage, `${this.collectionPrefix}${this.studyId}/transcriptAndTags/transcriptOnly/${participantId}/${taskId}`);
 
     const blob = new Blob([JSON.stringify(taglessTranscript)], {
       type: 'application/json',
     });
 
-    await uploadBytes(storageRef, blob);
+    await uploadBytes(storageRef1, blob);
+
+    const blob2 = new Blob([JSON.stringify(taglessTranscript)], {
+      type: 'application/json',
+    });
+
+    await uploadBytes(storageRef2, blob2);
   }
 
   async getEditedTranscript(participantId: string, authId: string, taskId: string): Promise<EditedText[]> {

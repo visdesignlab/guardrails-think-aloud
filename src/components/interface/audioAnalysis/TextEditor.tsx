@@ -191,9 +191,9 @@ export function TextEditor({
   // Update the current transcription based on the playTime.
   // TODO:: this is super unperformant, but I don't have a solution atm. think about it harder
   useEffect(() => {
-    if (transcription && transcription.results.length > 0 && currentShownTranscription !== null && participant && playTime > 0) {
+    if (transcription && transcription.results.length > 0 && currentShownTranscription !== null && participant && playTime > 0 && (trialFilterAnswersName ? participant.answers[trialFilterAnswersName] : true)) {
       let tempCurrentShownTranscription = currentShownTranscription;
-      const startTime = (trialFilterAnswersName ? participant.answers[trialFilterAnswersName].startTime : participant.answers.audioTest.startTime);
+      const startTime = (trialFilterAnswersName ? participant.answers[trialFilterAnswersName].startTime : participant.answers.audioTest_2.startTime);
 
       const timeInSeconds = Math.abs(playTime - startTime) / 1000;
 

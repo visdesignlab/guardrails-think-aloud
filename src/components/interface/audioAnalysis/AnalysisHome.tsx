@@ -127,7 +127,7 @@ export function AnalysisHome() {
 
   return status === 'success' && allPartsData ? (
     <Stack gap={50} style={{ width: '100%' }}>
-      {allPartsData?.filter((d) => prolificIds.includes(d.participantId) || inPersonIds.includes(d.participantId)).map((participant) => <AnalysisSingleParticipant maxDuration={maxDuration} key={participant.participantId} participant={participant} />)}
+      {allPartsData?.map((participant) => <AnalysisSingleParticipant maxDuration={maxDuration} key={participant.participantId} participant={participant} />)}
     </Stack>
   ) : <Loader />;
 }

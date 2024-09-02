@@ -334,7 +334,7 @@ export function ThinkAloudTable({
             size="12px"
             component={Link}
             target="_blank"
-            to={`${PREFIX}ThinkAloud/analysis/${cell.getValue()}/reviewer-${currentTask}`}
+            to={`${PREFIX}stage-2/analysis/${cell.getValue()}/ui/reviewer-${currentTask}`}
           >
             {cell.getValue() as string}
           </Anchor>

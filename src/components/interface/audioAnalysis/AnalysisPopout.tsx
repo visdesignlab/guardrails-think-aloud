@@ -72,58 +72,26 @@ async function getTags(storageEngine: StorageEngine | undefined, type: 'particip
 
   return [];
 }
-
-const inPersonIds = ['participant1',
-  'participant2',
-  'participant3',
-  'participant4',
-  'participant5',
-  'participant6',
-  'participant7',
-  'participant8',
-  'participant9',
-  'participant10',
-  'participant11'];
-
-const prolificIds = ['64889a71fa7592ae332fa34f',
-  '63626a68cf44b4184483c8e8',
-  '5c838a63532afd001506fd34',
-  '6171849094893d838e6e6f62',
-  '5b14898a30d562000155f1e9',
-  '5ba42e35984ec30001c6018d',
-  '5e690f83d1e0d41a69f00db8',
-  '65c10e659858a125507f47f7',
-  '616c844bac81732b87340f97',
-  '63f7a3b799889de3f13622db',
-  '65a4333efc75f965e7fc0cb5',
-  '65dca61cadaa2dd820a0f28c',
-  '65a00ba072965b5ce928d307',
-  '5cb3cdc781f3750001043bf2',
-  '5d76ac914c93440001c03fd7',
-  '65c691b5ca603ec8e389700e',
-  '5d31dc6e42678e001a0bdedd',
-  '6294ce94ea81c4554b141010',
-  '60743e408fd768b1a939ed4c',
-  '638a8c63c74f91261108cebf',
-  '5780d9a1900cc80001d2d1c2',
-  '5fa07c635b16f50d21483d5e',
-  '63ee65e3470c23cb401ca89a',
+const prolificIds = ['61268bfae35dcb011f6081b5',
+  '6659cba171cfa5c88e0f2f2d',
+  '5bcbb1963c6f9f0001cc747a',
+  '66af9c58a260607ed281b3d3',
+  '606492360e422d12dc63000e',
+  '66b20cecdaa58257b695232e',
+  '637e31794e63dcbc52047f13',
+  '5bfed68b7f1cfd0001d3a16b',
+  '5f035c7ce9d86254e87992e4',
+  '669aae6d0c2d9e337c393103',
+  '66b0cee16f892ca232478aa9',
   '5b99663d4cefb60001e7a214',
-  '63162bda14b96736b08a554d',
-  '6554e79557e3d6be08e32ceb',
-  '63d5021468a31efc02740c1e',
-  '63fbf0e3b18cc14adc0dbfb6',
-  '63beebaa4c5884797ff00a98',
-  '64217d8202361ad4dbed3596',
-  '58ff31a1d10e2b000108579e',
-  '63f779d27ba18edb4b6e5a57',
-  '62e023ae6d022e4d7bfc5db1',
-  '5e5521580ee1b951df544c3c',
-  '5bb756696322c5000159756c',
-  '637545d6428d85daeedc3df5',
-  '641ecfa9f83175a3d9f63636',
-  '611a8d23c1d17506a23df589',
-  '605e622287f0e806ffe04590'];
+  '65ccc7e766127e24c9e313a2',
+  '62c8391cd913ab9b5317d5f9',
+  '6658b23217b161dc426bd14d',
+  '64135cd06bb7dc980f8cbd93',
+  '6658d49af0f0787f8c8132b9',
+  '5f653cb18aad310a9ee7c32d',
+  '60fff225fb2da6129caf029a',
+  '6690e84b526c802d080e8d7b'];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function AnalysisPopout({ mini } : {mini: boolean}) {
@@ -151,7 +119,7 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
   const storeDispatch = useStoreDispatch();
 
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [playTime, setPlayTime] = useThrottledState<number>(0, 50);
+  const [playTime, setPlayTime] = useThrottledState<number>(0, 200);
 
   const waveSurferDiv = useRef(null);
 
@@ -188,16 +156,6 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
 
   const { value: onlineTranscriptList, status: transcriptStatus } = useAsync(getTranscript, [storageEngine, participant?.participantId, _trialFilter, auth.user.user?.email]);
 
-  useEffect(() => {
-    if (onlineTranscriptList && transcriptStatus === 'success') {
-      _setTranscriptList(onlineTranscriptList);
-    } else {
-      _setTranscriptList(null);
-    }
-  }, [onlineTranscriptList, transcriptStatus]);
-
-  const allPartIds = useMemo(() => [...inPersonIds, ...prolificIds], []);
-
   const trialFilterAnswersName = useMemo(() => {
     if (!trialFilter || !participant) {
       return null;
@@ -205,6 +163,24 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
 
     return Object.keys(participant.answers).find((key) => key.startsWith(trialFilter)) || null;
   }, [participant, trialFilter]);
+
+  useEffect(() => {
+    if (onlineTranscriptList && transcriptStatus === 'success') {
+      if (onlineTranscriptList.length === 0 && trialFilterAnswersName && participant && trialFilterAnswersName.split('-').length === 4 && participant.answers[trialFilterAnswersName] !== undefined) {
+        const answer = participant.answers[trialFilterAnswersName].answer.explain as unknown as string;
+        _setTranscriptList([{
+          text: answer, transcriptMappingEnd: 0, transcriptMappingStart: 0, annotation: '', selectedTags: [],
+        }]);
+      } else {
+        _setTranscriptList(onlineTranscriptList);
+      }
+    } else {
+      _setTranscriptList(null);
+    }
+  }, [onlineTranscriptList, participant, transcriptStatus, trialFilterAnswersName]);
+
+  const allPartIds = useMemo(() => [...prolificIds], []);
+
   // Create an instance of trrack to ensure getState works, incase the saved state is not a full state node.
   useEffect(() => {
     if (trialFilterAnswersName && participant) {
@@ -340,12 +316,12 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
   useEffect(() => {
     timeUpdate(analysisWaveformTime, false);
 
-    if (wavesurfer && Math.abs(wavesurfer.getCurrentTime() - analysisWaveformTime) > 0.8) {
+    if (wavesurfer && Math.abs(wavesurfer.getCurrentTime() - analysisWaveformTime) > 0.8 && mini) {
       setTimeout(() => {
         wavesurfer.setTime(analysisWaveformTime);
       });
     }
-  }, [analysisWaveformTime, timeUpdate, wavesurfer]);
+  }, [analysisWaveformTime, mini, timeUpdate, wavesurfer]);
 
   const xScale = useMemo(() => {
     if (!participant) {
@@ -412,7 +388,7 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
                   storeDispatch(setAnalysisParticipantName(e));
                   navigate(`../../${trialFilter ? '../' : ''}${e}/ui/reviewer-${trialFilter || ''}`, { relative: 'path' });
                 }}
-                data={[...inPersonIds, ...prolificIds]}
+                data={[...prolificIds]}
               />
               <Select
                 style={{ width: '300px' }}
@@ -431,15 +407,15 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
           ? !mini ? <AllTasksTimeline trialFilter={trialFilterAnswersName} xScale={xScale} setSelectedTask={setSelectedTask} participantData={participant} width={width} height={200} /> : null
           : !mini ? <Center style={{ height: '275px' }}><Loader /></Center>
             : null}
-        { xScale && participant !== null
+        { xScale && participant !== null && (trialFilterAnswersName ? participant.answers[trialFilterAnswersName] !== undefined : true)
           ? (
             <>
               <Box
                 ref={waveSurferDiv}
                 ml={participant && xScale ? xScale(participant.answers.audioTest_2.startTime) : 0}
-                mr={participant && xScale ? xScale(participant.answers['post-study-survey_19'].startTime) : 0}
+                mr={participant && xScale ? xScale(participant.answers['post-study_19'].startTime) : 0}
                 style={{
-                  overflow: 'visible', width: `${participant && !trialFilter ? xScale(participant.answers['post-study-survey_19'].startTime) - xScale(participant.answers.audioTest_2.startTime) : (xScale.range()[1] - xScale.range()[0])}px`,
+                  overflow: 'visible', width: `${participant && !trialFilter ? xScale(participant.answers['post-study_19'].startTime) - xScale(participant.answers.audioTest_2.startTime) : (xScale.range()[1] - xScale.range()[0])}px`,
                 }}
               >
                 <WaveSurferContext.Provider value={wavesurfer}>
@@ -483,7 +459,7 @@ export function AnalysisPopout({ mini } : {mini: boolean}) {
 
         { trialFilter ? (
           <Stack>
-            {participant && onlineTranscriptList && transcriptStatus === 'success' && transcriptList && !mini ? <TextEditor transcriptList={transcriptList} setTranscriptList={setTranscriptList} setCurrentShownTranscription={setCurrentShownTranscription} currentShownTranscription={currentShownTranscription} participant={participant} playTime={playTime} setTranscriptLines={setTranscriptLines as any} /> : !mini ? <Loader /> : null}
+            {participant && onlineTranscriptList && transcriptStatus === 'success' && transcriptList && !mini && (trialFilterAnswersName ? participant.answers[trialFilterAnswersName] !== undefined : true) ? <TextEditor transcriptList={transcriptList} setTranscriptList={setTranscriptList} setCurrentShownTranscription={setCurrentShownTranscription} currentShownTranscription={currentShownTranscription} participant={participant} playTime={playTime} setTranscriptLines={setTranscriptLines as any} /> : !mini ? <Loader /> : null}
           </Stack>
         ) : null}
       </Stack>

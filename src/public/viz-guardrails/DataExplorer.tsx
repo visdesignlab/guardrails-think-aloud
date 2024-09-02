@@ -20,6 +20,7 @@ import RangeSelector from './RangeSelector';
 import Selector from './Selector';
 import { StripPlot } from './StripPlot';
 import { Help } from './Help';
+import { PREFIX } from '../../utils/Prefix';
 
 export interface ChartParams {
     dataset: string,
@@ -49,7 +50,7 @@ export function DataExplorer({ parameters, setAnswer }: StimulusParams<ChartPara
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   useEffect(() => {
-    d3.csv(`./data/${dataname}.csv`)
+    d3.csv(`/stage-2/data/${dataname}.csv`)
       .then((data) => {
         setData(data);
         setItems(Array.from(new Set(data.map((row) => (JSON.stringify({
