@@ -50,7 +50,7 @@ export function DataExplorer({ parameters, setAnswer }: StimulusParams<ChartPara
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   useEffect(() => {
-    d3.csv(`/stage-2/data/${dataname}.csv`)
+    d3.csv(`${PREFIX}stage-2/data/${dataname}.csv`)
       .then((data) => {
         setData(data);
         setItems(Array.from(new Set(data.map((row) => (JSON.stringify({
