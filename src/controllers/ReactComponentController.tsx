@@ -1,6 +1,7 @@
 import { Suspense, useCallback } from 'react';
 import { ModuleNamespace } from 'vite/types/hot';
 import { AppShell, Text } from '@mantine/core';
+import { useParams } from 'react-router-dom';
 import { ReactComponent } from '../parser/types';
 import { StimulusParams } from '../store/types';
 import ResourceNotFound from '../ResourceNotFound';
@@ -19,6 +20,8 @@ function ReactComponentController({ currentConfig, provState }: { currentConfig:
 
   const reactPath = `../public/${currentConfig.path}`;
   const StimulusComponent = reactPath in modules ? (modules[reactPath] as ModuleNamespace).default : null;
+
+  const { trrackId } = useParams();
 
   const storeDispatch = useStoreDispatch();
   const { updateResponseBlockValidation, setIframeAnswers } = useStoreActions();
@@ -47,7 +50,7 @@ function ReactComponentController({ currentConfig, provState }: { currentConfig:
           />
         )
         : <ResourceNotFound path={currentConfig.path} />}
-      {currentStep.toString().startsWith('reviewer-') ? (
+      {currentStep.toString().startsWith('reviewer-') && trrackId ? (
         <AppShell.Footer p="md">
           <AnalysisPopout mini />
         </AppShell.Footer>
